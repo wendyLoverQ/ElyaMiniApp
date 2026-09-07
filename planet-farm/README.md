@@ -7,7 +7,7 @@ This directory contains the first authored 3D model for the Elya farming Mini Ap
 - `preview.png`: deterministic preview render.
 - `tools/build_planet.py`: Blender CLI build script.
 
-The GLB uses one continuous `Planet_Ground` mesh. Its arable soil is assigned directly to faces of that mesh, with no plot boards, decals, or overlay geometry. Eight invisible crop anchors (`CropAnchor_01` through `CropAnchor_08`) provide initial planting positions; future grass, trees, and crops grow outward along the actual planet surface normal.
+The GLB uses one continuous `Planet_Ground` mesh. Its rounded arable field and winding river are assigned directly to faces of that mesh, with no plot boards, water strips, decals, or overlay geometry. Eight invisible crop anchors (`CropAnchor_01` through `CropAnchor_08`) provide initial planting positions; future grass, trees, and crops grow outward along the actual planet surface normal. Trees use tapered trunks and layered foliage clusters; decorative rocks are intentionally omitted from this version.
 
 Rebuild with Blender 5.2 LTS:
 

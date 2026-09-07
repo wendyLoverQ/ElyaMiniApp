@@ -56,15 +56,28 @@ def parent_to_asset(obj, root):
     return obj
 
 
-def assign_integrated_farmland(planet, grass_material, soil_material):
-    """Paint one arable region into the planet mesh without overlay geometry. Codex / GPT-5 / model ID unavailable."""
+def assign_integrated_surface(planet, grass_material, soil_material, water_material):
+    """Paint farmland and a thin river into the planet mesh itself. Codex / GPT-5 / model ID unavailable."""
     planet.data.materials.append(grass_material)
     planet.data.materials.append(soil_material)
+    planet.data.materials.append(water_material)
     farm_center = Vector((0.0, -0.48, 0.88)).normalized()
+    farm_x = Vector((1.0, 0.0, 0.0))
+    farm_y = farm_center.cross(farm_x).normalized()
     for polygon in planet.data.polygons:
         direction = polygon.center.normalized()
-        irregular_edge = 0.018 * math.sin(direction.x * 24.0) + 0.014 * math.cos(direction.y * 19.0)
-        polygon.material_index = 1 if direction.dot(farm_center) + irregular_edge > 0.885 else 0
+        local_x = direction.dot(farm_x)
+        local_y = direction.dot(farm_y)
+        rounded_field = (abs(local_x) / 0.37) ** 4 + (abs(local_y) / 0.23) ** 4 < 1.0
+        faces_field = direction.dot(farm_center) > 0.91 and rounded_field
+
+        river_center_x = 0.44 - 0.18 * (direction.z + 0.35) + 0.055 * math.sin(direction.z * 11.0)
+        faces_river = (
+            direction.y < -0.22
+            and -0.58 < direction.z < 0.62
+            and abs(direction.x - river_center_x) < 0.025
+        )
+        polygon.material_index = 2 if faces_river else (1 if faces_field else 0)
 
 
 def add_tree(name, normal, planet_radius, materials, root, scale=1.0):
@@ -72,10 +85,11 @@ def add_tree(name, normal, planet_radius, materials, root, scale=1.0):
     normal = Vector(normal).normalized()
     rotation = normal.to_track_quat("Z", "Y").to_euler()
 
-    bpy.ops.mesh.primitive_cylinder_add(
-        vertices=10,
-        radius=0.09 * scale,
-        depth=0.48 * scale,
+    bpy.ops.mesh.primitive_cone_add(
+        vertices=12,
+        radius1=0.105 * scale,
+        radius2=0.065 * scale,
+        depth=0.56 * scale,
         location=normal * (planet_radius + 0.20 * scale),
         rotation=rotation,
     )
@@ -84,17 +98,27 @@ def add_tree(name, normal, planet_radius, materials, root, scale=1.0):
     assign_material(trunk, materials["wood"])
     parent_to_asset(trunk, root)
 
-    bpy.ops.mesh.primitive_ico_sphere_add(
-        subdivisions=2,
-        radius=0.32 * scale,
-        location=normal * (planet_radius + 0.55 * scale),
-    )
-    crown = bpy.context.object
-    crown.name = f"{name}_Crown"
-    crown.scale = (0.9, 0.9, 1.2)
-    crown.rotation_euler = rotation
-    assign_material(crown, materials["leaf"])
-    parent_to_asset(crown, root)
+    tangent_x = Vector((0, 0, 1)).cross(normal)
+    if tangent_x.length < 0.001:
+        tangent_x = Vector((1, 0, 0))
+    tangent_x.normalize()
+    tangent_y = normal.cross(tangent_x).normalized()
+    crown_parts = [
+        ((0.00, 0.00, 0.61), 0.30, "leaf"),
+        ((-0.20, 0.01, 0.54), 0.23, "leaf_dark"),
+        ((0.19, -0.02, 0.56), 0.24, "leaf"),
+        ((0.02, 0.16, 0.68), 0.21, "leaf_light"),
+        ((0.00, -0.13, 0.76), 0.19, "leaf_light"),
+    ]
+    for part_index, ((x, y, outward), radius, material_key) in enumerate(crown_parts, start=1):
+        location = normal * (planet_radius + outward * scale) + tangent_x * x * scale + tangent_y * y * scale
+        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=radius * scale, location=location)
+        crown = bpy.context.object
+        crown.name = f"{name}_Crown_{part_index:02d}"
+        crown.scale = (1.0, 0.88, 1.08)
+        crown.rotation_euler = rotation
+        assign_material(crown, materials[material_key])
+        parent_to_asset(crown, root)
 
 
 def look_at(obj, point):
@@ -111,16 +135,19 @@ def build_scene():
     materials = {
         "grass": create_material("Grass", (0.20, 0.72, 0.42), 1.0),
         "soil": create_material("Farm Soil", (0.58, 0.25, 0.14), 1.0),
-        "stone": create_material("Stone", (0.48, 0.53, 0.68), 1.0),
+        "water": create_material("River Water", (0.08, 0.52, 0.92), 0.75),
         "wood": create_material("Wood", (0.46, 0.19, 0.10), 1.0),
         "leaf": create_material("Tree Leaf", (0.08, 0.56, 0.30), 1.0),
+        "leaf_dark": create_material("Tree Leaf Dark", (0.035, 0.36, 0.22), 1.0),
+        "leaf_light": create_material("Tree Leaf Light", (0.24, 0.76, 0.39), 1.0),
     }
 
     planet_radius = 2.5
-    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=5, radius=planet_radius, location=(0, 0, 0))
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=128, ring_count=64, radius=planet_radius, location=(0, 0, 0))
     planet = bpy.context.object
     planet.name = "Planet_Ground"
-    assign_integrated_farmland(planet, materials["grass"], materials["soil"])
+    bpy.ops.object.shade_smooth()
+    assign_integrated_surface(planet, materials["grass"], materials["soil"], materials["water"])
     parent_to_asset(planet, root)
 
     planting_normals = [
@@ -144,16 +171,6 @@ def build_scene():
     ]
     for index, normal in enumerate(tree_normals, start=1):
         add_tree(f"Tree_{index:02d}", normal, planet_radius, materials, root, 0.72 + 0.08 * (index % 3))
-
-    rock_normals = [(-0.15, -0.92, 0.36), (0.22, -0.95, 0.30), (-0.92, 0.08, -0.38), (0.86, 0.18, -0.48)]
-    for index, normal in enumerate(rock_normals, start=1):
-        normal_v = Vector(normal).normalized()
-        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1, radius=0.18, location=normal_v * 2.58)
-        rock = bpy.context.object
-        rock.name = f"Rock_{index:02d}"
-        rock.scale = (1.2, 0.8, 0.75)
-        assign_material(rock, materials["stone"])
-        parent_to_asset(rock, root)
 
     root["assetType"] = "elya-farm-planet"
     root["plantingSurface"] = planet.name
