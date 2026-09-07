@@ -1,0 +1,36 @@
+html,
+body {
+  margin: 0;
+  width: 320px;
+  height: 320px;
+  overflow: hidden;
+}
+
+.pet {
+  position: relative;
+  width: 320px;
+  height: 320px;
+}
+
+.saturn-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.saturn-stage canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+
+/* 土星连同环在 320x320 视口内的投影实测约 291x237（相机距离 9.5、世界仰角 38°、FOV 30°，
+   剪影 x 15-306、y 41-278）。椭圆拖动区覆盖星球主体与环身；环尖端之外的透明边缘
+   不拦截点击，由宿主穿透到桌面。开发：TRAE / GLM / GLM-5.3 */
+.hit-area {
+  position: absolute;
+  left: 10px;
+  top: 38px;
+  width: 300px;
+  height: 244px;
+}

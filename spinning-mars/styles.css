@@ -1,0 +1,35 @@
+html,
+body {
+  margin: 0;
+  width: 320px;
+  height: 320px;
+  overflow: hidden;
+}
+
+.pet {
+  position: relative;
+  width: 320px;
+  height: 320px;
+}
+
+.mars-stage {
+  position: absolute;
+  inset: 0;
+}
+
+.mars-stage canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  pointer-events: none;
+}
+
+/* 火星在 320x320 视口内的投影直径约 268px（相机距离 8、半径 1.8、FOV 30°），椭圆拖动区与其对齐。
+   开发：TRAE / GLM / GLM-5.3 */
+.hit-area {
+  position: absolute;
+  left: 26px;
+  top: 26px;
+  width: 268px;
+  height: 268px;
+}
