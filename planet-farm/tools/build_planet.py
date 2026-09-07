@@ -2,7 +2,7 @@ import math
 from pathlib import Path
 
 import bpy
-from mathutils import Matrix, Vector
+from mathutils import Vector
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -56,49 +56,15 @@ def parent_to_asset(obj, root):
     return obj
 
 
-def add_spherical_patch(name, normal, size, radius, material, root, rotation=0.0, subdivisions=(5, 4)):
-    """Build a field patch directly on the planet curvature. Codex / GPT-5 / model ID unavailable."""
-    normal = Vector(normal).normalized()
-    tangent_x = Vector((0, 0, 1)).cross(normal)
-    if tangent_x.length < 0.001:
-        tangent_x = Vector((1, 0, 0))
-    tangent_x.normalize()
-    tangent_y = normal.cross(tangent_x).normalized()
-    if rotation:
-        tangent_x.rotate(Matrix.Rotation(rotation, 3, normal))
-        tangent_y = normal.cross(tangent_x).normalized()
-
-    width, height = size
-    columns, rows = subdivisions
-    vertices = []
-    for row in range(rows + 1):
-        v = (row / rows - 0.5) * height
-        for column in range(columns + 1):
-            u = (column / columns - 0.5) * width
-            point = (normal * radius + tangent_x * u + tangent_y * v).normalized() * radius
-            vertices.append(tuple(point))
-
-    faces = []
-    stride = columns + 1
-    for row in range(rows):
-        for column in range(columns):
-            lower_left = row * stride + column
-            faces.append((lower_left, lower_left + 1, lower_left + stride + 1, lower_left + stride))
-
-    mesh = bpy.data.meshes.new(f"{name}_Mesh")
-    mesh.from_pydata(vertices, [], faces)
-    mesh.update()
-    obj = bpy.data.objects.new(name, mesh)
-    bpy.context.scene.collection.objects.link(obj)
-    assign_material(obj, material)
-    parent_to_asset(obj, root)
-
-    solidify = obj.modifiers.new("Field depth", "SOLIDIFY")
-    solidify.thickness = 0.025
-    solidify.offset = 0.0
-    bpy.context.view_layer.objects.active = obj
-    bpy.ops.object.modifier_apply(modifier=solidify.name)
-    return obj
+def assign_integrated_farmland(planet, grass_material, soil_material):
+    """Paint one arable region into the planet mesh without overlay geometry. Codex / GPT-5 / model ID unavailable."""
+    planet.data.materials.append(grass_material)
+    planet.data.materials.append(soil_material)
+    farm_center = Vector((0.0, -0.48, 0.88)).normalized()
+    for polygon in planet.data.polygons:
+        direction = polygon.center.normalized()
+        irregular_edge = 0.018 * math.sin(direction.x * 24.0) + 0.014 * math.cos(direction.y * 19.0)
+        polygon.material_index = 1 if direction.dot(farm_center) + irregular_edge > 0.885 else 0
 
 
 def add_tree(name, normal, planet_radius, materials, root, scale=1.0):
@@ -145,7 +111,6 @@ def build_scene():
     materials = {
         "grass": create_material("Grass", (0.20, 0.72, 0.42), 1.0),
         "soil": create_material("Farm Soil", (0.58, 0.25, 0.14), 1.0),
-        "furrow": create_material("Soil Furrow", (0.34, 0.10, 0.07), 1.0),
         "stone": create_material("Stone", (0.48, 0.53, 0.68), 1.0),
         "wood": create_material("Wood", (0.46, 0.19, 0.10), 1.0),
         "leaf": create_material("Tree Leaf", (0.08, 0.56, 0.30), 1.0),
@@ -155,44 +120,22 @@ def build_scene():
     bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=5, radius=planet_radius, location=(0, 0, 0))
     planet = bpy.context.object
     planet.name = "Planet_Ground"
-    assign_material(planet, materials["grass"])
+    assign_integrated_farmland(planet, materials["grass"], materials["soil"])
     parent_to_asset(planet, root)
 
-    plot_normals = [
+    planting_normals = [
         (-0.46, -0.36, 0.82), (-0.16, -0.46, 0.88), (0.16, -0.46, 0.88), (0.46, -0.36, 0.82),
         (-0.49, -0.64, 0.60), (-0.17, -0.72, 0.67), (0.17, -0.72, 0.67), (0.49, -0.64, 0.60),
     ]
-    for index, normal in enumerate(plot_normals, start=1):
+    for index, normal in enumerate(planting_normals, start=1):
         normal_v = Vector(normal).normalized()
-        plot = add_spherical_patch(
-            f"Plot_{index:02d}",
-            normal_v,
-            (0.43, 0.34),
-            planet_radius + 0.025,
-            materials["soil"],
-            root,
-            subdivisions=(5, 4),
-        )
-        for furrow_index in (-1, 0, 1):
-            tangent_x = Vector((0, 0, 1)).cross(normal_v).normalized()
-            furrow_normal = (normal_v * planet_radius + tangent_x * furrow_index * 0.105).normalized()
-            add_spherical_patch(
-                f"Plot_{index:02d}_Furrow_{furrow_index + 2}",
-                furrow_normal,
-                (0.025, 0.27),
-                planet_radius + 0.055,
-                materials["furrow"],
-                root,
-                subdivisions=(1, 4),
-            )
         anchor = bpy.data.objects.new(f"CropAnchor_{index:02d}", None)
         anchor.empty_display_type = "CIRCLE"
         anchor.empty_display_size = 0.12
-        anchor.location = normal_v * (planet_radius + 0.10)
+        anchor.location = normal_v * (planet_radius + 0.025)
         anchor.rotation_euler = normal_v.to_track_quat("Z", "Y").to_euler()
         scene.collection.objects.link(anchor)
         parent_to_asset(anchor, root)
-        plot["cropAnchor"] = anchor.name
 
     tree_normals = [
         (-0.76, 0.46, 0.46), (0.74, 0.48, 0.48), (-0.90, -0.20, 0.38),
@@ -213,7 +156,8 @@ def build_scene():
         parent_to_asset(rock, root)
 
     root["assetType"] = "elya-farm-planet"
-    root["plotCount"] = len(plot_normals)
+    root["plantingSurface"] = planet.name
+    root["plantingSlotCount"] = len(planting_normals)
     return root
 
 
