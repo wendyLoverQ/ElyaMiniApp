@@ -17,10 +17,33 @@ def create_material(name, color, roughness=0.6, metallic=0.0):
     material = bpy.data.materials.new(name)
     material.diffuse_color = (*color, 1.0)
     material.use_nodes = True
-    principled = material.node_tree.nodes.get("Principled BSDF")
-    principled.inputs["Base Color"].default_value = (*color, 1.0)
-    principled.inputs["Roughness"].default_value = roughness
-    principled.inputs["Metallic"].default_value = metallic
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    nodes.clear()
+
+    output = nodes.new("ShaderNodeOutputMaterial")
+    diffuse = nodes.new("ShaderNodeBsdfDiffuse")
+    shader_to_rgb = nodes.new("ShaderNodeShaderToRGB")
+    ramp = nodes.new("ShaderNodeValToRGB")
+    emission = nodes.new("ShaderNodeEmission")
+
+    diffuse.inputs["Color"].default_value = (*color, 1.0)
+    diffuse.inputs["Roughness"].default_value = roughness
+    ramp.color_ramp.interpolation = "CONSTANT"
+    dark = tuple(max(0.0, channel * 0.42) for channel in color)
+    middle = tuple(min(1.0, channel * 0.78 + 0.035) for channel in color)
+    light = tuple(min(1.0, channel * 1.08 + 0.045) for channel in color)
+    ramp.color_ramp.elements[0].position = 0.34
+    ramp.color_ramp.elements[0].color = (*dark, 1.0)
+    mid = ramp.color_ramp.elements.new(0.58)
+    mid.color = (*middle, 1.0)
+    ramp.color_ramp.elements[-1].position = 0.74
+    ramp.color_ramp.elements[-1].color = (*light, 1.0)
+
+    links.new(diffuse.outputs["BSDF"], shader_to_rgb.inputs["Shader"])
+    links.new(shader_to_rgb.outputs["Color"], ramp.inputs["Fac"])
+    links.new(ramp.outputs["Color"], emission.inputs["Color"])
+    links.new(emission.outputs["Emission"], output.inputs["Surface"])
     return material
 
 
@@ -265,19 +288,17 @@ def render_preview(asset_root):
     look_at(camera, (0, 0, 0.45))
     scene.camera = camera
 
-    scene.render.engine = "BLENDER_WORKBENCH"
-    scene.display.shading.light = "STUDIO"
-    scene.display.shading.studio_light = "paint.sl"
-    scene.display.shading.color_type = "MATERIAL"
-    scene.display.shading.background_type = "WORLD"
-    scene.display.shading.show_shadows = True
-    scene.display.shading.show_cavity = True
-    scene.display.shading.cavity_type = "WORLD"
-    scene.display.shading.curvature_ridge_factor = 1.7
-    scene.display.shading.curvature_valley_factor = 1.2
-    scene.display.shading.show_specular_highlight = False
-    scene.display.shading.show_object_outline = True
-    scene.display.shading.object_outline_color = (0.07, 0.045, 0.11)
+    scene.render.engine = "BLENDER_EEVEE"
+    scene.render.use_freestyle = True
+    scene.render.line_thickness = 1.15
+    freestyle = scene.view_layers[0].freestyle_settings
+    line_set = freestyle.linesets[0]
+    line_style = line_set.linestyle
+    if line_style is None:
+        line_style = bpy.data.linestyles.new("Anime Outline")
+        line_set.linestyle = line_style
+    line_style.color = (0.075, 0.045, 0.11)
+    line_style.thickness = 1.15
     scene.render.resolution_x = 900
     scene.render.resolution_y = 900
     scene.render.resolution_percentage = 100
