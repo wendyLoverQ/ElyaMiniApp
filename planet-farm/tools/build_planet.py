@@ -2,7 +2,7 @@ import math
 from pathlib import Path
 
 import bpy
-from mathutils import Vector
+from mathutils import Matrix, Vector
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -56,24 +56,49 @@ def parent_to_asset(obj, root):
     return obj
 
 
-def bevel(obj, width=0.05, segments=3):
-    modifier = obj.modifiers.new("Soft bevel", "BEVEL")
-    modifier.width = width
-    modifier.segments = segments
-    bpy.context.view_layer.objects.active = obj
-    bpy.ops.object.modifier_apply(modifier=modifier.name)
+def add_spherical_patch(name, normal, size, radius, material, root, rotation=0.0, subdivisions=(5, 4)):
+    """Build a field patch directly on the planet curvature. Codex / GPT-5 / model ID unavailable."""
+    normal = Vector(normal).normalized()
+    tangent_x = Vector((0, 0, 1)).cross(normal)
+    if tangent_x.length < 0.001:
+        tangent_x = Vector((1, 0, 0))
+    tangent_x.normalize()
+    tangent_y = normal.cross(tangent_x).normalized()
+    if rotation:
+        tangent_x.rotate(Matrix.Rotation(rotation, 3, normal))
+        tangent_y = normal.cross(tangent_x).normalized()
 
+    width, height = size
+    columns, rows = subdivisions
+    vertices = []
+    for row in range(rows + 1):
+        v = (row / rows - 0.5) * height
+        for column in range(columns + 1):
+            u = (column / columns - 0.5) * width
+            point = (normal * radius + tangent_x * u + tangent_y * v).normalized() * radius
+            vertices.append(tuple(point))
 
-def add_cube(name, location, scale, material, root, bevel_width=0.04):
-    bpy.ops.mesh.primitive_cube_add(location=location)
-    obj = bpy.context.object
-    obj.name = name
-    obj.scale = scale
-    bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
-    if bevel_width:
-        bevel(obj, bevel_width)
+    faces = []
+    stride = columns + 1
+    for row in range(rows):
+        for column in range(columns):
+            lower_left = row * stride + column
+            faces.append((lower_left, lower_left + 1, lower_left + stride + 1, lower_left + stride))
+
+    mesh = bpy.data.meshes.new(f"{name}_Mesh")
+    mesh.from_pydata(vertices, [], faces)
+    mesh.update()
+    obj = bpy.data.objects.new(name, mesh)
+    bpy.context.scene.collection.objects.link(obj)
     assign_material(obj, material)
-    return parent_to_asset(obj, root)
+    parent_to_asset(obj, root)
+
+    solidify = obj.modifiers.new("Field depth", "SOLIDIFY")
+    solidify.thickness = 0.025
+    solidify.offset = 0.0
+    bpy.context.view_layer.objects.active = obj
+    bpy.ops.object.modifier_apply(modifier=solidify.name)
+    return obj
 
 
 def add_tree(name, normal, planet_radius, materials, root, scale=1.0):
@@ -119,17 +144,11 @@ def build_scene():
 
     materials = {
         "grass": create_material("Grass", (0.20, 0.72, 0.42), 1.0),
-        "grass_light": create_material("Grass Light", (0.48, 0.88, 0.42), 1.0),
         "soil": create_material("Farm Soil", (0.58, 0.25, 0.14), 1.0),
         "furrow": create_material("Soil Furrow", (0.34, 0.10, 0.07), 1.0),
-        "water": create_material("Pond Water", (0.12, 0.62, 0.96), 0.72),
         "stone": create_material("Stone", (0.48, 0.53, 0.68), 1.0),
         "wood": create_material("Wood", (0.46, 0.19, 0.10), 1.0),
         "leaf": create_material("Tree Leaf", (0.08, 0.56, 0.30), 1.0),
-        "wall": create_material("Farmhouse Wall", (1.00, 0.84, 0.57), 1.0),
-        "roof": create_material("Farmhouse Roof", (0.96, 0.24, 0.30), 1.0),
-        "cream": create_material("Windmill Cream", (1.00, 0.95, 0.76), 1.0),
-        "cloud": create_material("Cloud", (0.95, 0.98, 1.0), 1.0),
     }
 
     planet_radius = 2.5
@@ -139,77 +158,41 @@ def build_scene():
     assign_material(planet, materials["grass"])
     parent_to_asset(planet, root)
 
-    bpy.ops.mesh.primitive_cylinder_add(vertices=48, radius=1.43, depth=0.18, location=(0, 0, 2.47))
-    plateau = bpy.context.object
-    plateau.name = "Farm_Plateau"
-    assign_material(plateau, materials["grass_light"])
-    bevel(plateau, 0.08, 4)
-    parent_to_asset(plateau, root)
-
-    plot_positions = [
-        (-0.72, -0.48), (-0.24, -0.48), (0.24, -0.48), (0.72, -0.48),
-        (-0.72, 0.02), (-0.24, 0.02), (0.24, 0.02), (0.72, 0.02),
+    plot_normals = [
+        (-0.46, -0.36, 0.82), (-0.16, -0.46, 0.88), (0.16, -0.46, 0.88), (0.46, -0.36, 0.82),
+        (-0.49, -0.64, 0.60), (-0.17, -0.72, 0.67), (0.17, -0.72, 0.67), (0.49, -0.64, 0.60),
     ]
-    for index, (x, y) in enumerate(plot_positions, start=1):
-        plot = add_cube(
+    for index, normal in enumerate(plot_normals, start=1):
+        normal_v = Vector(normal).normalized()
+        plot = add_spherical_patch(
             f"Plot_{index:02d}",
-            (x, y, 2.605),
-            (0.205, 0.19, 0.045),
+            normal_v,
+            (0.43, 0.34),
+            planet_radius + 0.025,
             materials["soil"],
             root,
-            0.035,
+            subdivisions=(5, 4),
         )
         for furrow_index in (-1, 0, 1):
-            add_cube(
+            tangent_x = Vector((0, 0, 1)).cross(normal_v).normalized()
+            furrow_normal = (normal_v * planet_radius + tangent_x * furrow_index * 0.105).normalized()
+            add_spherical_patch(
                 f"Plot_{index:02d}_Furrow_{furrow_index + 2}",
-                (x + furrow_index * 0.09, y, 2.66),
-                (0.018, 0.145, 0.012),
+                furrow_normal,
+                (0.025, 0.27),
+                planet_radius + 0.055,
                 materials["furrow"],
                 root,
-                0.006,
+                subdivisions=(1, 4),
             )
         anchor = bpy.data.objects.new(f"CropAnchor_{index:02d}", None)
         anchor.empty_display_type = "CIRCLE"
         anchor.empty_display_size = 0.12
-        anchor.location = (x, y, 2.70)
+        anchor.location = normal_v * (planet_radius + 0.10)
+        anchor.rotation_euler = normal_v.to_track_quat("Z", "Y").to_euler()
         scene.collection.objects.link(anchor)
         parent_to_asset(anchor, root)
         plot["cropAnchor"] = anchor.name
-
-    house = add_cube("Farmhouse_Body", (-0.73, 0.76, 2.86), (0.40, 0.34, 0.32), materials["wall"], root, 0.055)
-    house.rotation_euler.z = math.radians(-8)
-    bpy.ops.mesh.primitive_cone_add(vertices=4, radius1=0.62, radius2=0.0, depth=0.46, location=(-0.73, 0.76, 3.37), rotation=(0, 0, math.radians(45 - 8)))
-    roof = bpy.context.object
-    roof.name = "Farmhouse_Roof"
-    roof.scale.y = 0.82
-    assign_material(roof, materials["roof"])
-    parent_to_asset(roof, root)
-    add_cube("Farmhouse_Door", (-0.73, 0.405, 2.80), (0.105, 0.026, 0.20), materials["wood"], root, 0.018)
-
-    bpy.ops.mesh.primitive_cylinder_add(vertices=20, radius=0.16, depth=0.78, location=(0.83, 0.83, 2.91))
-    tower = bpy.context.object
-    tower.name = "Windmill_Tower"
-    tower.scale = (1.0, 1.0, 1.18)
-    assign_material(tower, materials["cream"])
-    parent_to_asset(tower, root)
-    add_cube("Windmill_Hub", (0.83, 0.65, 3.35), (0.10, 0.08, 0.10), materials["wood"], root, 0.02)
-    for angle in (0, 90):
-        blade = add_cube(
-            f"Windmill_Blade_{angle}",
-            (0.83, 0.54, 3.35),
-            (0.055, 0.025, 0.39),
-            materials["wood"],
-            root,
-            0.018,
-        )
-        blade.rotation_euler.y = math.radians(angle)
-
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=40, ring_count=20, location=(1.45, -0.30, 2.22))
-    pond = bpy.context.object
-    pond.name = "Pond"
-    pond.scale = (0.58, 0.42, 0.07)
-    assign_material(pond, materials["water"])
-    parent_to_asset(pond, root)
 
     tree_normals = [
         (-0.76, 0.46, 0.46), (0.74, 0.48, 0.48), (-0.90, -0.20, 0.38),
@@ -229,23 +212,8 @@ def build_scene():
         assign_material(rock, materials["stone"])
         parent_to_asset(rock, root)
 
-    for cloud_index, (location, scale) in enumerate([
-        ((-3.0, 0.6, 2.7), 0.50), ((2.9, 0.9, 1.9), 0.42), ((0.7, 2.9, 2.4), 0.34)
-    ], start=1):
-        cloud_root = bpy.data.objects.new(f"Cloud_{cloud_index:02d}", None)
-        cloud_root.location = location
-        scene.collection.objects.link(cloud_root)
-        parent_to_asset(cloud_root, root)
-        for puff_index, offset in enumerate(((-0.32, 0, 0), (0, 0, 0.12), (0.32, 0, -0.02))):
-            bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=scale, location=Vector(location) + Vector(offset) * scale * 1.8)
-            puff = bpy.context.object
-            puff.name = f"Cloud_{cloud_index:02d}_Puff_{puff_index + 1}"
-            puff.scale = (1.25, 0.65, 0.72)
-            assign_material(puff, materials["cloud"])
-            puff.parent = cloud_root
-
     root["assetType"] = "elya-farm-planet"
-    root["plotCount"] = len(plot_positions)
+    root["plotCount"] = len(plot_normals)
     return root
 
 
