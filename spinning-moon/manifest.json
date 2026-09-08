@@ -1,0 +1,47 @@
+{
+  "type": "web-pet",
+  "title": "自旋月球",
+  "entry": "index.html",
+  "width": 320,
+  "height": 320,
+  "preview": "preview.jpg",
+  "presentation": {
+    "viewport": {
+      "preferredWidth": 320,
+      "preferredHeight": 320,
+      "minWidth": 320,
+      "minHeight": 320,
+      "maxWidth": 320,
+      "maxHeight": 320,
+      "resize": "none",
+      "aspectRatio": "preserve"
+    },
+    "visualScale": {
+      "owner": "host",
+      "default": 1,
+      "min": 0.6,
+      "max": 8,
+      "gestures": [
+        "scale-wheel",
+        "scale-hold"
+      ]
+    }
+  },
+  "settings": [
+    {
+      "key": "rotationSpeed",
+      "label": "转速",
+      "type": "range",
+      "default": 0.12,
+      "min": 0,
+      "max": 1.2,
+      "step": 0.01
+    },
+    {
+      "key": "realtime",
+      "label": "实时光照与月相",
+      "type": "boolean",
+      "default": false
+    }
+  ]
+}

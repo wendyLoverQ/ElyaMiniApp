@@ -1,0 +1,19 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自旋月球</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="pet" aria-label="自旋月球桌宠">
+      <div class="moon-stage" aria-hidden="true"></div>
+      <!-- 月球投影为居中圆形，椭圆拖动区与球体轮廓一致；透明边缘不拦截点击，由宿主穿透到桌面。
+           此元素必须可被 Runtime 自动采集（不得加 aria-hidden，否则被排除出交互表面）。
+           开发：TRAE / GLM / GLM-5.3 -->
+      <div class="hit-area" data-elya-hit="drag" data-elya-hit-shape="ellipse" data-elya-host-gestures="move scale-wheel scale-hold"></div>
+    </main>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>
