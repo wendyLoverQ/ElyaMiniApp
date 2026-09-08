@@ -30,18 +30,77 @@
   "settings": [
     {
       "key": "planet",
-      "label": "行星",
+      "label": {
+        "zh-CN": "行星",
+        "zh-TW": "行星",
+        "en": "Planet",
+        "es": "Planeta",
+        "ja": "惑星",
+        "ko": "행성",
+        "ru": "Планета",
+        "de": "Planet",
+        "fr": "Planète"
+      },
       "type": "select",
       "default": "mercury",
       "options": [
-        { "value": "mercury", "label": "水星-mercury" },
-        { "value": "venus", "label": "金星-venus" },
-        { "value": "jupiter", "label": "木星-jupiter" }
+        {
+          "value": "mercury",
+          "label": {
+            "zh-CN": "水星-mercury",
+            "zh-TW": "水星-mercury",
+            "en": "Mercury",
+            "es": "Mercurio",
+            "ja": "水星",
+            "ko": "수성",
+            "ru": "Меркурий",
+            "de": "Merkur",
+            "fr": "Mercure"
+          }
+        },
+        {
+          "value": "venus",
+          "label": {
+            "zh-CN": "金星-venus",
+            "zh-TW": "金星-venus",
+            "en": "Venus",
+            "es": "Venus",
+            "ja": "金星",
+            "ko": "금성",
+            "ru": "Венера",
+            "de": "Venus",
+            "fr": "Vénus"
+          }
+        },
+        {
+          "value": "jupiter",
+          "label": {
+            "zh-CN": "木星-jupiter",
+            "zh-TW": "木星-jupiter",
+            "en": "Jupiter",
+            "es": "Júpiter",
+            "ja": "木星",
+            "ko": "목성",
+            "ru": "Юпитер",
+            "de": "Jupiter",
+            "fr": "Jupiter"
+          }
+        }
       ]
     },
     {
       "key": "rotationSpeed",
-      "label": "转速",
+      "label": {
+        "zh-CN": "转速",
+        "zh-TW": "轉速",
+        "en": "Rotation speed",
+        "es": "Velocidad de rotación",
+        "ja": "回転速度",
+        "ko": "회전 속도",
+        "ru": "Скорость вращения",
+        "de": "Rotationsgeschwindigkeit",
+        "fr": "Vitesse de rotation"
+      },
       "type": "range",
       "default": 0.12,
       "min": 0,
