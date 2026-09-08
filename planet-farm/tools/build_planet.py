@@ -2,6 +2,7 @@ import math
 from pathlib import Path
 
 import bpy
+import numpy as np
 from mathutils import Vector
 
 
@@ -56,67 +57,145 @@ def parent_to_asset(obj, root):
     return obj
 
 
-def assign_integrated_surface(planet, grass_material, soil_material, water_material):
-    """Paint farmland and a thin river into the planet mesh itself. Codex / GPT-5 / model ID unavailable."""
-    planet.data.materials.append(grass_material)
-    planet.data.materials.append(soil_material)
-    planet.data.materials.append(water_material)
+def mix_color(base, overlay, amount):
+    return tuple(base[index] * (1.0 - amount) + overlay[index] * amount for index in range(3))
+
+
+def smooth_mask(signed_distance, feather):
+    value = max(0.0, min(1.0, 0.5 - signed_distance / feather))
+    return value * value * (3.0 - 2.0 * value)
+
+
+def create_planet_surface_texture():
+    """Rasterize a smooth field rectangle and river into one planet texture. Codex / GPT-5 / model ID unavailable."""
+    width = 1024
+    height = 512
+    grass = (0.20, 0.72, 0.42)
+    soil = (0.58, 0.25, 0.14)
+    water = (0.08, 0.52, 0.92)
     farm_center = Vector((0.0, -0.48, 0.88)).normalized()
     farm_x = Vector((1.0, 0.0, 0.0))
     farm_y = farm_center.cross(farm_x).normalized()
-    for polygon in planet.data.polygons:
-        direction = polygon.center.normalized()
-        local_x = direction.dot(farm_x)
-        local_y = direction.dot(farm_y)
-        rounded_field = (abs(local_x) / 0.37) ** 4 + (abs(local_y) / 0.23) ** 4 < 1.0
-        faces_field = direction.dot(farm_center) > 0.91 and rounded_field
+    pixels = []
 
-        river_center_x = 0.44 - 0.18 * (direction.z + 0.35) + 0.055 * math.sin(direction.z * 11.0)
-        faces_river = (
-            direction.y < -0.22
-            and -0.58 < direction.z < 0.62
-            and abs(direction.x - river_center_x) < 0.025
-        )
-        polygon.material_index = 2 if faces_river else (1 if faces_field else 0)
+    for y in range(height):
+        latitude = -math.pi * 0.5 + math.pi * (y + 0.5) / height
+        cos_latitude = math.cos(latitude)
+        for x in range(width):
+            longitude = -math.pi + math.tau * (x + 0.5) / width
+            direction = Vector((
+                cos_latitude * math.cos(longitude),
+                cos_latitude * math.sin(longitude),
+                math.sin(latitude),
+            ))
+
+            local_x = direction.dot(farm_x)
+            local_y = direction.dot(farm_y)
+            corner_radius = 0.018
+            qx = abs(local_x) - (0.36 - corner_radius)
+            qy = abs(local_y) - (0.205 - corner_radius)
+            field_distance = (
+                math.sqrt(max(qx, 0.0) ** 2 + max(qy, 0.0) ** 2)
+                + min(max(qx, qy), 0.0)
+                - corner_radius
+            )
+            field_mask = smooth_mask(field_distance, 0.010) if direction.dot(farm_center) > 0.90 else 0.0
+
+            river_center_x = 0.46 - 0.20 * (direction.z + 0.35) + 0.050 * math.sin(direction.z * 8.0)
+            river_distance = abs(direction.x - river_center_x) - 0.014
+            river_in_range = direction.y < -0.20 and -0.62 < direction.z < 0.63
+            river_mask = smooth_mask(river_distance, 0.008) if river_in_range else 0.0
+
+            color = mix_color(grass, soil, field_mask)
+            color = mix_color(color, water, river_mask)
+            pixels.extend((*color, 1.0))
+
+    image = bpy.data.images.new("Planet Surface", width=width, height=height, alpha=True)
+    image.pixels.foreach_set(np.asarray(pixels, dtype=np.float32))
+    image.update()
+    texture_path = SOURCE_DIR / "planet-surface.png"
+    image.save_render(str(texture_path), scene=bpy.context.scene)
+    bpy.data.images.remove(image)
+    saved_image = bpy.data.images.load(str(texture_path), check_existing=False)
+    saved_image.name = "Planet Surface"
+    saved_image.colorspace_settings.name = "sRGB"
+    saved_image.pack()
+    return saved_image
+
+
+def create_planet_material(surface_image):
+    """Create the export-safe textured planet material. Codex / GPT-5 / model ID unavailable."""
+    material = bpy.data.materials.new("Planet Surface Material")
+    material.diffuse_color = (0.20, 0.72, 0.42, 1.0)
+    material.use_nodes = True
+    nodes = material.node_tree.nodes
+    links = material.node_tree.links
+    principled = nodes.get("Principled BSDF")
+    texture = nodes.new("ShaderNodeTexImage")
+    texture.image = surface_image
+    texture.interpolation = "Linear"
+    principled.inputs["Roughness"].default_value = 0.92
+    principled.inputs["Specular IOR Level"].default_value = 0.18
+    links.new(texture.outputs["Color"], principled.inputs["Base Color"])
+    return material
+
+
+def add_tapered_segment(name, start, end, base_radius, tip_radius, material, root):
+    direction = Vector(end) - Vector(start)
+    bpy.ops.mesh.primitive_cone_add(
+        vertices=12,
+        radius1=base_radius,
+        radius2=tip_radius,
+        depth=direction.length,
+        location=(Vector(start) + Vector(end)) * 0.5,
+        rotation=direction.to_track_quat("Z", "Y").to_euler(),
+    )
+    segment = bpy.context.object
+    segment.name = name
+    assign_material(segment, material)
+    return parent_to_asset(segment, root)
 
 
 def add_tree(name, normal, planet_radius, materials, root, scale=1.0):
-    """Place a stylized tree upright to the planet surface. Codex / GPT-5 / model ID unavailable."""
+    """Build an anime tree with a trunk, branches, and coherent crown. Codex / GPT-5 / model ID unavailable."""
     normal = Vector(normal).normalized()
-    rotation = normal.to_track_quat("Z", "Y").to_euler()
-
-    bpy.ops.mesh.primitive_cone_add(
-        vertices=12,
-        radius1=0.105 * scale,
-        radius2=0.065 * scale,
-        depth=0.56 * scale,
-        location=normal * (planet_radius + 0.20 * scale),
-        rotation=rotation,
-    )
-    trunk = bpy.context.object
-    trunk.name = f"{name}_Trunk"
-    assign_material(trunk, materials["wood"])
-    parent_to_asset(trunk, root)
-
     tangent_x = Vector((0, 0, 1)).cross(normal)
     if tangent_x.length < 0.001:
         tangent_x = Vector((1, 0, 0))
     tangent_x.normalize()
     tangent_y = normal.cross(tangent_x).normalized()
+    trunk_start = normal * (planet_radius - 0.01)
+    trunk_end = normal * (planet_radius + 0.60 * scale)
+    add_tapered_segment(
+        f"{name}_Trunk", trunk_start, trunk_end,
+        0.105 * scale, 0.060 * scale, materials["wood"], root,
+    )
+    branch_origin = normal * (planet_radius + 0.35 * scale)
+    add_tapered_segment(
+        f"{name}_Branch_Left", branch_origin,
+        normal * (planet_radius + 0.56 * scale) - tangent_x * 0.25 * scale,
+        0.050 * scale, 0.022 * scale, materials["wood"], root,
+    )
+    add_tapered_segment(
+        f"{name}_Branch_Right", branch_origin + normal * 0.05 * scale,
+        normal * (planet_radius + 0.59 * scale) + tangent_x * 0.26 * scale,
+        0.048 * scale, 0.020 * scale, materials["wood"], root,
+    )
+
+    rotation = normal.to_track_quat("Z", "Y").to_euler()
     crown_parts = [
-        ((0.00, 0.00, 0.61), 0.30, "leaf"),
-        ((-0.20, 0.01, 0.54), 0.23, "leaf_dark"),
-        ((0.19, -0.02, 0.56), 0.24, "leaf"),
-        ((0.02, 0.16, 0.68), 0.21, "leaf_light"),
-        ((0.00, -0.13, 0.76), 0.19, "leaf_light"),
+        ((-0.20, 0.00, 0.66), (0.34, 0.29, 0.26), "leaf_dark"),
+        ((0.20, -0.01, 0.68), (0.35, 0.30, 0.27), "leaf"),
+        ((0.00, 0.05, 0.84), (0.38, 0.32, 0.30), "leaf_light"),
     ]
-    for part_index, ((x, y, outward), radius, material_key) in enumerate(crown_parts, start=1):
+    for part_index, ((x, y, outward), dimensions, material_key) in enumerate(crown_parts, start=1):
         location = normal * (planet_radius + outward * scale) + tangent_x * x * scale + tangent_y * y * scale
-        bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=2, radius=radius * scale, location=location)
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=24, ring_count=16, radius=1.0, location=location)
         crown = bpy.context.object
         crown.name = f"{name}_Crown_{part_index:02d}"
-        crown.scale = (1.0, 0.88, 1.08)
+        crown.scale = tuple(dimension * scale for dimension in dimensions)
         crown.rotation_euler = rotation
+        bpy.ops.object.shade_smooth()
         assign_material(crown, materials[material_key])
         parent_to_asset(crown, root)
 
@@ -133,21 +212,20 @@ def build_scene():
     scene.collection.objects.link(root)
 
     materials = {
-        "grass": create_material("Grass", (0.20, 0.72, 0.42), 1.0),
-        "soil": create_material("Farm Soil", (0.58, 0.25, 0.14), 1.0),
-        "water": create_material("River Water", (0.08, 0.52, 0.92), 0.75),
         "wood": create_material("Wood", (0.46, 0.19, 0.10), 1.0),
         "leaf": create_material("Tree Leaf", (0.08, 0.56, 0.30), 1.0),
         "leaf_dark": create_material("Tree Leaf Dark", (0.035, 0.36, 0.22), 1.0),
-        "leaf_light": create_material("Tree Leaf Light", (0.24, 0.76, 0.39), 1.0),
+        "leaf_light": create_material("Tree Leaf Light", (0.18, 0.68, 0.32), 1.0),
     }
+    surface_image = create_planet_surface_texture()
+    planet_material = create_planet_material(surface_image)
 
     planet_radius = 2.5
     bpy.ops.mesh.primitive_uv_sphere_add(segments=128, ring_count=64, radius=planet_radius, location=(0, 0, 0))
     planet = bpy.context.object
     planet.name = "Planet_Ground"
     bpy.ops.object.shade_smooth()
-    assign_integrated_surface(planet, materials["grass"], materials["soil"], materials["water"])
+    assign_material(planet, planet_material)
     parent_to_asset(planet, root)
 
     planting_normals = [
@@ -165,9 +243,8 @@ def build_scene():
         parent_to_asset(anchor, root)
 
     tree_normals = [
-        (-0.76, 0.46, 0.46), (0.74, 0.48, 0.48), (-0.90, -0.20, 0.38),
-        (0.91, -0.18, 0.38), (-0.55, -0.72, 0.42), (0.58, -0.70, 0.42),
-        (-0.45, 0.82, 0.34), (0.47, 0.82, 0.34),
+        (-0.82, 0.42, 0.40), (0.78, 0.50, 0.37), (-0.90, -0.12, 0.32),
+        (0.88, 0.18, 0.43), (-0.55, 0.76, 0.34), (0.45, 0.83, 0.33),
     ]
     for index, normal in enumerate(tree_normals, start=1):
         add_tree(f"Tree_{index:02d}", normal, planet_radius, materials, root, 0.72 + 0.08 * (index % 3))
@@ -175,6 +252,7 @@ def build_scene():
     root["assetType"] = "elya-farm-planet"
     root["plantingSurface"] = planet.name
     root["plantingSlotCount"] = len(planting_normals)
+    root["surfaceTexture"] = surface_image.name
     return root
 
 
