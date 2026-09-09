@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>骑单车的鹈鹕</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main id="pet" class="pet" aria-label="骑单车的鹈鹕">
+      <!-- SVG 是桌宠的唯一画面；页面与 SVG 背景均保持透明。
+           开发：Codex / GPT / gpt-5 -->
+      <svg class="pelican" viewBox="0 0 480 360" role="img" aria-labelledby="pet-title pet-description">
+        <title id="pet-title">骑单车的鹈鹕</title>
+        <desc id="pet-description">一只白色鹈鹕骑着青绿色小单车</desc>
+        <g id="rider" class="rider">
+          <ellipse class="contact-shadow" cx="252" cy="315" rx="178" ry="13" />
+
+          <g class="bike">
+            <g class="wheel-back" transform="translate(139 253)">
+              <g class="wheel">
+                <circle class="tire" r="66" />
+                <circle class="rim" r="57" />
+                <g class="spokes">
+                  <path d="M0-55V55M-55 0H55M-39-39L39 39M39-39L-39 39" />
+                </g>
+                <circle class="hub" r="7" />
+              </g>
+            </g>
+            <g class="wheel-front" transform="translate(347 253)">
+              <g class="wheel">
+                <circle class="tire" r="66" />
+                <circle class="rim" r="57" />
+                <g class="spokes">
+                  <path d="M0-55V55M-55 0H55M-39-39L39 39M39-39L-39 39" />
+                </g>
+                <circle class="hub" r="7" />
+              </g>
+            </g>
+
+            <g class="frame">
+              <path d="M139 253L205 169L260 253ZM205 169L300 181L260 253M300 181L347 253M286 158L307 158M300 181L286 158" />
+              <path class="fork" d="M347 253L327 151L350 137" />
+              <path class="handlebar" d="M328 151L353 151L362 139" />
+              <path class="seat-post" d="M205 169L195 145" />
+              <path class="seat" d="M178 143Q199 135 218 145" />
+            </g>
+
+            <g transform="translate(260 253)">
+              <g class="crank">
+                <circle r="13" />
+                <path d="M-19 0H19" />
+                <circle cx="-22" r="4" />
+                <circle cx="22" r="4" />
+              </g>
+            </g>
+            <path class="chain" d="M139 253Q199 237 260 246M139 253Q199 269 260 260" />
+            <circle class="bell" cx="349" cy="145" r="8" />
+          </g>
+
+          <g class="pelican-body">
+            <path class="tail" d="M144 163Q102 153 73 177Q104 187 139 190Q112 194 93 211Q130 213 166 198Z" />
+            <path class="body" d="M126 164Q137 119 181 106Q229 92 264 124Q290 148 279 184Q269 222 223 234Q174 240 143 211Q119 190 126 164Z" />
+            <path class="wing" d="M145 143Q171 113 219 120Q250 127 259 151Q247 190 214 216Q174 224 151 198Q135 174 145 143Z" />
+            <path class="wing-detail" d="M157 151Q181 132 217 138M155 170Q184 151 230 153M162 191Q191 173 229 174M181 207Q204 192 222 189" />
+            <path class="neck" d="M226 148Q242 126 236 105Q229 81 244 58Q261 31 291 31Q315 31 329 49Q337 60 331 75Q309 74 296 88Q284 101 290 123Q298 151 279 172Q263 188 242 180Z" />
+            <path class="neck-line" d="M258 48Q243 71 253 99Q264 130 251 161" />
+            <path class="head-feathers" d="M263 38L258 23L273 33L277 18L287 33" />
+            <path class="head" d="M273 35Q302 22 325 42Q342 57 329 75Q310 82 294 91Q273 88 260 71Q252 51 273 35Z" />
+            <path class="head-highlight" d="M274 39Q299 27 317 43Q293 38 272 53Z" />
+            <circle class="eye-ring" cx="310" cy="53" r="10" />
+            <circle class="eye" cx="313" cy="52" r="4.8" />
+            <circle class="eye-glint" cx="315" cy="50" r="1.7" />
+            <path class="beak" d="M325 61Q397 57 462 75Q449 87 423 90Q374 94 323 83Z" />
+            <path class="beak-line" d="M329 70Q393 72 448 77" />
+            <path class="pouch" d="M325 73Q389 82 451 78Q427 111 390 126Q349 135 319 105Q307 92 309 82Z" />
+            <path class="pouch-highlight" d="M326 91Q368 111 414 94" />
+
+            <g class="wing-arm">
+              <path d="M217 132Q250 145 279 157Q302 167 329 151" />
+              <path d="M317 145Q329 141 338 149Q331 158 319 156" />
+            </g>
+            <g class="leg leg-back">
+              <path d="M183 220Q194 239 238 252" />
+              <path class="foot" d="M230 250Q243 244 252 254Q241 261 229 258" />
+            </g>
+            <g class="leg leg-front">
+              <path d="M218 218Q232 239 281 252" />
+              <path class="foot" d="M275 249Q290 246 296 257Q284 263 272 258" />
+            </g>
+          </g>
+
+          <g class="error-badge" aria-hidden="true">
+            <circle cx="349" cy="145" r="13" />
+            <path d="M349 138V147M349 152V153" />
+          </g>
+        </g>
+      </svg>
+    </main>
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

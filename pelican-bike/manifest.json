@@ -1,0 +1,51 @@
+{
+  "type": "web-pet",
+  "title": "骑单车的鹈鹕",
+  "entry": "index.html",
+  "width": 480,
+  "height": 360,
+  "storageScope": "resource",
+  "permissions": [
+    "hostPlacement"
+  ],
+  "preview": "preview.png",
+  "presentation": {
+    "viewport": {
+      "preferredWidth": 480,
+      "preferredHeight": 360,
+      "minWidth": 480,
+      "minHeight": 360,
+      "maxWidth": 480,
+      "maxHeight": 360,
+      "resize": "none",
+      "aspectRatio": "preserve"
+    },
+    "visualScale": {
+      "owner": "host",
+      "default": 1,
+      "min": 0.5,
+      "max": 3,
+      "gestures": [
+        "scale-wheel",
+        "scale-hold"
+      ]
+    }
+  },
+  "settings": [
+    {
+      "key": "rideSpeed",
+      "label": "车速 / Speed",
+      "type": "range",
+      "default": 72,
+      "min": 0,
+      "max": 160,
+      "step": 4
+    },
+    {
+      "key": "autoRide",
+      "label": "自动骑行 / Auto ride",
+      "type": "boolean",
+      "default": true
+    }
+  ]
+}

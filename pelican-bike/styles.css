@@ -1,0 +1,304 @@
+:root {
+  --feather: #f7f4e9;
+  --feather-shadow: #d9e1dc;
+  --ink: #18353b;
+  --pouch: #ee765b;
+  --pouch-light: #ffac75;
+  --bike: #168b8a;
+  --brass: #e4b646;
+  --cycle-duration: 0.72s;
+  --direction: 1;
+}
+
+html,
+body {
+  width: 480px;
+  height: 360px;
+  margin: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+body {
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.pet,
+.pelican {
+  width: 480px;
+  height: 360px;
+  display: block;
+}
+
+.pelican {
+  overflow: visible;
+  pointer-events: none;
+}
+
+.rider {
+  transform: scaleX(var(--direction));
+  transform-origin: 240px 180px;
+  transition: transform 180ms ease-out;
+}
+
+.contact-shadow {
+  fill: #163238;
+  opacity: 0.16;
+  filter: blur(4px);
+  transform-origin: center;
+  animation: shadow-pulse var(--cycle-duration) ease-in-out infinite;
+}
+
+.wheel {
+  animation: wheel-spin var(--cycle-duration) linear infinite;
+}
+
+.tire {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 12;
+}
+
+.rim {
+  fill: rgba(255, 255, 255, 0.07);
+  stroke: #d9eeee;
+  stroke-width: 4;
+}
+
+.spokes {
+  fill: none;
+  stroke: #77999b;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+}
+
+.hub {
+  fill: var(--brass);
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+.frame,
+.crank,
+.chain {
+  fill: none;
+  stroke: var(--bike);
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.frame .fork,
+.frame .handlebar,
+.frame .seat-post {
+  stroke: var(--ink);
+  stroke-width: 7;
+}
+
+.frame .seat {
+  stroke: var(--ink);
+  stroke-width: 11;
+}
+
+.crank {
+  stroke: var(--brass);
+  stroke-width: 6;
+  animation: crank-spin var(--cycle-duration) linear infinite;
+}
+
+.chain {
+  stroke: var(--brass);
+  stroke-width: 3;
+  opacity: 0.75;
+}
+
+.bell {
+  fill: var(--brass);
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+.pelican-body {
+  transform-origin: 220px 210px;
+  animation: body-bob var(--cycle-duration) ease-in-out infinite;
+}
+
+.tail,
+.body,
+.neck,
+.head {
+  fill: var(--feather);
+  stroke: var(--ink);
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+
+.head-highlight {
+  fill: #fffdf6;
+  opacity: 0.95;
+}
+
+.wing {
+  fill: var(--feather-shadow);
+  stroke: var(--ink);
+  stroke-width: 5;
+}
+
+.wing-detail,
+.neck-line,
+.head-feathers {
+  fill: none;
+  stroke: #8da4a1;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.head-feathers {
+  stroke: var(--ink);
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+
+.eye-ring {
+  fill: #f6c94d;
+  stroke: var(--ink);
+  stroke-width: 3;
+}
+
+.eye {
+  fill: var(--ink);
+}
+
+.eye-glint {
+  fill: white;
+}
+
+.beak,
+.pouch,
+.foot {
+  fill: var(--pouch);
+  stroke: var(--ink);
+  stroke-width: 5;
+  stroke-linejoin: round;
+}
+
+.beak {
+  fill: var(--pouch-light);
+}
+
+.beak-line,
+.pouch-highlight {
+  fill: none;
+  stroke: #b84d43;
+  stroke-width: 3;
+  stroke-linecap: round;
+}
+
+.pouch {
+  transform-origin: 325px 82px;
+  animation: pouch-sway calc(var(--cycle-duration) * 2) ease-in-out infinite;
+}
+
+.pouch-highlight {
+  opacity: 0.72;
+}
+
+.wing-arm,
+.leg {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 13;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.wing-arm path:last-child {
+  fill: var(--feather-shadow);
+  stroke-width: 5;
+}
+
+.leg {
+  stroke: var(--pouch);
+  stroke-width: 11;
+  transform-origin: 213px 220px;
+}
+
+.leg-front {
+  animation: pedal-front var(--cycle-duration) ease-in-out infinite;
+}
+
+.leg-back {
+  animation: pedal-back var(--cycle-duration) ease-in-out infinite;
+}
+
+.error-badge {
+  display: none;
+}
+
+.has-error .error-badge {
+  display: block;
+}
+
+.error-badge circle {
+  fill: #d9433f;
+  stroke: white;
+  stroke-width: 3;
+}
+
+.error-badge path {
+  fill: none;
+  stroke: white;
+  stroke-width: 3.5;
+  stroke-linecap: round;
+}
+
+.stopped .wheel,
+.stopped .crank,
+.stopped .pelican-body,
+.stopped .pouch,
+.stopped .leg,
+.stopped .contact-shadow {
+  animation-play-state: paused;
+}
+
+@keyframes wheel-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes crank-spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes body-bob {
+  0%, 100% { transform: translateY(0) rotate(-0.5deg); }
+  50% { transform: translateY(-5px) rotate(1deg); }
+}
+
+@keyframes pouch-sway {
+  0%, 100% { transform: rotate(-1deg) scaleY(1); }
+  50% { transform: rotate(2deg) scaleY(1.045); }
+}
+
+@keyframes pedal-front {
+  0%, 100% { transform: rotate(6deg) translateY(-2px); }
+  50% { transform: rotate(-9deg) translateY(7px); }
+}
+
+@keyframes pedal-back {
+  0%, 100% { transform: rotate(-8deg) translateY(7px); }
+  50% { transform: rotate(7deg) translateY(-3px); }
+}
+
+@keyframes shadow-pulse {
+  0%, 100% { transform: scaleX(1); opacity: 0.16; }
+  50% { transform: scaleX(0.92); opacity: 0.12; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pelican-body,
+  .pouch,
+  .contact-shadow {
+    animation: none;
+  }
+}
