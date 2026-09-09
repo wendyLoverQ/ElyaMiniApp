@@ -98,10 +98,10 @@ if (runtime) {
     regions: [
       { shape: 'ellipse', action: 'drag', x: 73, y: 187, width: 132, height: 132, hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
       { shape: 'ellipse', action: 'drag', x: 281, y: 187, width: 132, height: 132, hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
-      { shape: 'ellipse', action: 'drag', x: 118, y: 95, width: 170, height: 145, hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
-      { shape: 'ellipse', action: 'drag', x: 232, y: 18, width: 108, height: 172, hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
+      { shape: 'ellipse', action: 'drag', x: 102, y: 99, width: 165, height: 101, hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
+      { shape: 'ellipse', action: 'drag', x: 217, y: 16, width: 108, height: 158, hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
       { shape: 'polygon', action: 'drag', points: [
-        { x: 304, y: 55 }, { x: 466, y: 70 }, { x: 451, y: 94 }, { x: 414, y: 124 }, { x: 337, y: 131 }, { x: 306, y: 101 }
+        { x: 298, y: 50 }, { x: 466, y: 64 }, { x: 451, y: 82 }, { x: 415, y: 101 }, { x: 343, y: 116 }, { x: 306, y: 95 }
       ], hostGestures: ['move', 'scale-wheel', 'scale-hold'] }
     ]
   })
