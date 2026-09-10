@@ -96,6 +96,10 @@ if (runtime) {
     width: VIEWPORT.width,
     height: VIEWPORT.height,
     regions: [
+      { shape: 'polygon', action: 'drag', points: [
+        { x: 50, y: 145 }, { x: 245, y: 12 }, { x: 470, y: 58 }, { x: 458, y: 118 },
+        { x: 414, y: 318 }, { x: 72, y: 318 }
+      ], hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
       { shape: 'ellipse', action: 'drag', x: 73, y: 187, width: 132, height: 132, hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
       { shape: 'ellipse', action: 'drag', x: 281, y: 187, width: 132, height: 132, hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
       { shape: 'ellipse', action: 'drag', x: 102, y: 99, width: 165, height: 101, hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
@@ -108,16 +112,18 @@ if (runtime) {
   runtime.setBubbleAnchor({ x: 281, y: 27 })
 
   runtime.onSettingsChange((settings) => {
-    let changed = false
+    let hasRuntimeSettings = false
     if (typeof settings.rideSpeed === 'number' && Number.isFinite(settings.rideSpeed) && settings.rideSpeed >= SPEED_MIN && settings.rideSpeed <= SPEED_MAX) {
-      changed ||= settings.rideSpeed !== rideSpeed
       rideSpeed = settings.rideSpeed
+      hasRuntimeSettings = true
     }
     if (typeof settings.autoRide === 'boolean') {
-      changed ||= settings.autoRide !== autoRide
       autoRide = settings.autoRide
+      hasRuntimeSettings = true
     }
-    if (changed) restartMotion(runtime)
+    // 握手后的完整 settings 快照即使等于 manifest 默认值，也必须启动首次移动；
+    // 握手前的空快照不触发 placement。开发：Codex / GPT / gpt-5
+    if (hasRuntimeSettings) restartMotion(runtime)
   })
 
   runtime.onLifecycle((state) => {
@@ -137,8 +143,6 @@ if (runtime) {
     motionRevision += 1
     void stopHostMotion(runtime)
   })
-
-  restartMotion(runtime)
 } else {
   applyVisualSpeed()
 }
