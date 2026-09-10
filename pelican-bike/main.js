@@ -1,4 +1,3 @@
-const VIEWPORT = Object.freeze({ width: 480, height: 360 })
 const SPEED_MIN = 0
 const SPEED_MAX = 160
 const MOTION_SLICE_MS = 1200
@@ -10,12 +9,13 @@ let rideSpeed = 72
 let autoRide = true
 let direction = 1
 let active = true
+let dragging = false
 let motionRevision = 0
 
 // 车速同时控制宿主位移和 SVG 踩踏周期，避免角色动作与真实移动脱节。
 // 开发：Codex / GPT / gpt-5
 function applyVisualSpeed() {
-  const moving = active && autoRide && rideSpeed > 0
+  const moving = active && !dragging && autoRide && rideSpeed > 0
   const duration = moving ? Math.max(0.32, Math.min(1.6, 72 / rideSpeed)) : 1
   pet.style.setProperty('--cycle-duration', `${duration}s`)
   pet.style.setProperty('--direction', String(direction))
@@ -48,7 +48,7 @@ async function stopHostMotion(runtime) {
 // 并依据返回的 Win32 edgeDistances 掉头，不读取 DOM 或 Electron 绝对坐标。
 // 开发：Codex / GPT / gpt-5
 async function runMotion(runtime, revision) {
-  while (active && autoRide && rideSpeed > 0 && revision === motionRevision) {
+  while (active && !dragging && autoRide && rideSpeed > 0 && revision === motionRevision) {
     if (!runtime.placement) {
       setRuntimeFailure(true)
       return
@@ -90,26 +90,27 @@ function restartMotion(runtime) {
 
 const runtime = window.elyaPet
 if (runtime) {
-  // 多个椭圆和多边形近似可见 SVG 轮廓，避免整个 480×360 viewport 拦截透明区域。
+  // SVG 可见部件使用 data-elya-hit 交给 Runtime 自动采集，命中面与真实 DOM 保持一致。
   // 开发：Codex / GPT / gpt-5
-  runtime.setInteractionSurface({
-    width: VIEWPORT.width,
-    height: VIEWPORT.height,
-    regions: [
-      { shape: 'polygon', action: 'drag', points: [
-        { x: 50, y: 145 }, { x: 245, y: 12 }, { x: 470, y: 58 }, { x: 458, y: 118 },
-        { x: 414, y: 318 }, { x: 72, y: 318 }
-      ], hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
-      { shape: 'ellipse', action: 'drag', x: 73, y: 187, width: 132, height: 132, hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
-      { shape: 'ellipse', action: 'drag', x: 281, y: 187, width: 132, height: 132, hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
-      { shape: 'ellipse', action: 'drag', x: 102, y: 99, width: 165, height: 101, hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
-      { shape: 'ellipse', action: 'drag', x: 217, y: 16, width: 108, height: 158, hostGestures: ['move', 'scale-wheel', 'scale-hold'] },
-      { shape: 'polygon', action: 'drag', points: [
-        { x: 298, y: 50 }, { x: 466, y: 64 }, { x: 451, y: 82 }, { x: 415, y: 101 }, { x: 343, y: 116 }, { x: 306, y: 95 }
-      ], hostGestures: ['move', 'scale-wheel', 'scale-hold'] }
-    ]
-  })
+  runtime.setInteractionSurface(null)
+  runtime.invalidateInteractionSurface()
   runtime.setBubbleAnchor({ x: 281, y: 27 })
+
+  // 宿主拖动时暂停自动骑行，避免 placement 动画在拖动过程中抢回窗口位置；松手后续骑。
+  // 开发：Codex / GPT / gpt-5
+  runtime.onDragGesture((event) => {
+    if (event.phase === 'start') {
+      dragging = true
+      motionRevision += 1
+      applyVisualSpeed()
+      void stopHostMotion(runtime)
+      return
+    }
+    if (event.phase === 'end') {
+      dragging = false
+      restartMotion(runtime)
+    }
+  })
 
   runtime.onSettingsChange((settings) => {
     let hasRuntimeSettings = false
@@ -129,17 +130,20 @@ if (runtime) {
   runtime.onLifecycle((state) => {
     if (state.type === 'hidden' || state.type === 'paused') {
       active = false
+      dragging = false
       motionRevision += 1
       applyVisualSpeed()
       void stopHostMotion(runtime)
     } else if (state.type === 'shown' || state.type === 'resumed') {
       active = true
+      dragging = false
       restartMotion(runtime)
     }
   })
 
   runtime.onDispose(() => {
     active = false
+    dragging = false
     motionRevision += 1
     void stopHostMotion(runtime)
   })

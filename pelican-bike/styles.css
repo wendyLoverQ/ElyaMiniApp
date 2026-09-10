@@ -33,7 +33,7 @@ body {
 
 .pelican {
   overflow: visible;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .rider {
