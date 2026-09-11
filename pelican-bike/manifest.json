@@ -9,6 +9,19 @@
     "hostPlacement"
   ],
   "preview": "preview.png",
+  "operationGuide": [
+    {
+      "zh-CN": "左键拖动：移动鹈鹕；拖动时暂停自动骑行",
+      "zh-TW": "左鍵拖曳：移動鵜鶘；拖曳時暫停自動騎行",
+      "en": "Left drag: move the pelican; auto ride pauses while dragging",
+      "es": "Arrastre izquierdo: mover el pelícano; el paseo automático se pausa al arrastrar",
+      "ja": "左ドラッグ：ペリカンを移動。ドラッグ中は自動走行を一時停止",
+      "ko": "왼쪽 드래그: 펠리컨 이동; 드래그 중 자동 주행 일시 정지",
+      "ru": "Перетаскивание левой кнопкой: двигать пеликана; автопоездка приостанавливается",
+      "de": "Mit linker Taste ziehen: Pelikan bewegen; automatische Fahrt pausiert dabei",
+      "fr": "Glisser avec le bouton gauche : déplacer le pélican ; le trajet automatique est suspendu"
+    }
+  ],
   "presentation": {
     "viewport": {
       "preferredWidth": 480,

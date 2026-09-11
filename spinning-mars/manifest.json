@@ -5,6 +5,19 @@
   "width": 320,
   "height": 320,
   "preview": "preview.jpg",
+  "operationGuide": [
+    {
+      "zh-CN": "Ctrl+左键拖动：旋转视角",
+      "zh-TW": "Ctrl+左鍵拖曳：旋轉視角",
+      "en": "Ctrl+left drag: rotate view",
+      "es": "Ctrl+arrastrar con botón izquierdo: girar vista",
+      "ja": "Ctrl+左ドラッグ：視点を回転",
+      "ko": "Ctrl+왼쪽 드래그: 시점 회전",
+      "ru": "Ctrl+перетаскивание левой кнопкой: вращать вид",
+      "de": "Strg+Ziehen mit linker Taste: Ansicht drehen",
+      "fr": "Ctrl+glisser avec clic gauche : faire pivoter la vue"
+    }
+  ],
   "presentation": {
     "viewport": {
       "preferredWidth": 320,
