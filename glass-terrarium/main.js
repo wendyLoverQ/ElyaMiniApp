@@ -43,7 +43,7 @@ stage.appendChild(renderer.domElement)
 const scene = new THREE.Scene()
 const camera = new THREE.PerspectiveCamera(29, WIDTH / HEIGHT, 0.1, 60)
 camera.position.set(0.22, 0.28, 16)
-camera.lookAt(0, 0.24, 0)
+camera.lookAt(0, 0.08, 0)
 
 const world = new THREE.Group()
 world.position.y = -0.05
@@ -70,35 +70,35 @@ scene.add(warmFill)
 
 const materials = {
   glass: new THREE.MeshPhysicalMaterial({
-    color: 0xb8e5dc,
-    roughness: 0.08,
+    color: 0xd7f3ed,
+    roughness: 0.045,
     metalness: 0,
     transmission: 0.96,
-    thickness: 0.28,
+    thickness: 0.2,
     ior: 1.47,
     transparent: true,
-    opacity: 0.31,
+    opacity: 0.22,
     side: THREE.DoubleSide,
     depthWrite: false,
     clearcoat: 1,
     clearcoatRoughness: 0.08
   }),
   glassEdge: new THREE.MeshPhysicalMaterial({
-    color: 0x9fd7cf,
+    color: 0xc3ebe4,
     roughness: 0.04,
     transmission: 0.84,
     thickness: 0.42,
     transparent: true,
-    opacity: 0.58,
+    opacity: 0.48,
     depthWrite: false
   }),
   walnut: new THREE.MeshStandardMaterial({ color: 0x3b2115, roughness: 0.76, metalness: 0.04 }),
-  walnutLight: new THREE.MeshStandardMaterial({ color: 0x6b3c22, roughness: 0.68, metalness: 0.02 }),
-  brass: new THREE.MeshStandardMaterial({ color: 0xa77935, roughness: 0.26, metalness: 0.91 }),
+  cork: new THREE.MeshStandardMaterial({ color: 0x8b5b35, roughness: 0.92, metalness: 0 }),
+  corkDark: new THREE.MeshStandardMaterial({ color: 0x57351f, roughness: 0.96, metalness: 0 }),
   brassDark: new THREE.MeshStandardMaterial({ color: 0x5d4020, roughness: 0.38, metalness: 0.82 }),
-  enamel: new THREE.MeshPhysicalMaterial({ color: 0x1cb5b1, roughness: 0.12, metalness: 0.18, clearcoat: 1, clearcoatRoughness: 0.04 }),
   soil: new THREE.MeshStandardMaterial({ color: 0x4a3020, roughness: 0.98 }),
   soilWet: new THREE.MeshStandardMaterial({ color: 0x352218, roughness: 0.82 }),
+  substrate: new THREE.MeshStandardMaterial({ color: 0x75664f, roughness: 0.94 }),
   bark: new THREE.MeshStandardMaterial({ color: 0x3f2818, roughness: 0.94 }),
   barkLight: new THREE.MeshStandardMaterial({ color: 0x624127, roughness: 0.9 }),
   mossDark: new THREE.MeshStandardMaterial({ color: 0x24472b, roughness: 1 }),
@@ -176,19 +176,19 @@ function makeHeartLeaf(size, material) {
 
 function createBottle() {
   const glass = makeLathe([
-    [1.92, -3.05], [2.12, -2.82], [2.27, -2.25], [2.34, -1.1], [2.28, 0.1],
-    [2.05, 1.05], [1.6, 1.8], [1.02, 2.35], [0.78, 2.52], [0.77, 3.18]
+    [1.62, -3.02], [1.79, -2.9], [1.88, -2.68], [1.9, -2.3], [1.9, 1.68],
+    [1.84, 1.92], [1.61, 2.14], [1.03, 2.42], [0.74, 2.58], [0.73, 3.08]
   ], materials.glass, 96)
   glass.renderOrder = 20
   world.add(glass)
 
-  const baseRing = new THREE.Mesh(new THREE.TorusGeometry(2.03, 0.075, 12, 96), materials.glassEdge)
+  const baseRing = new THREE.Mesh(new THREE.TorusGeometry(1.7, 0.075, 12, 96), materials.glassEdge)
   baseRing.rotation.x = Math.PI / 2
   baseRing.position.y = -2.93
   baseRing.renderOrder = 21
   world.add(baseRing)
 
-  for (const [y, radius, tube] of [[2.52, 0.82, 0.09], [3.12, 0.85, 0.08]]) {
+  for (const [y, radius, tube] of [[2.58, 0.77, 0.075], [3.07, 0.79, 0.07]]) {
     const rim = new THREE.Mesh(new THREE.TorusGeometry(radius, tube, 12, 64), materials.glassEdge)
     rim.rotation.x = Math.PI / 2
     rim.position.y = y
@@ -197,85 +197,63 @@ function createBottle() {
   }
 }
 
-function createStopperAndValve() {
-  const stopper = new THREE.Group()
-  stopper.add(makeLathe([[0.58, 0], [0.71, 0.16], [0.79, 0.42], [0.7, 0.65], [0.46, 0.86]], materials.walnut, 48))
-  stopper.position.y = 3.16
+function createStopper() {
+  const stopper = new THREE.Mesh(new THREE.CylinderGeometry(0.68, 0.61, 0.62, 64, 5), materials.cork)
+  stopper.position.y = 3.31
+  stopper.castShadow = true
   world.add(stopper)
 
-  const grainGeometry = new THREE.TorusGeometry(0.63, 0.018, 5, 40)
-  for (let index = 0; index < 5; index += 1) {
-    const grain = new THREE.Mesh(grainGeometry, index % 2 ? materials.walnutLight : materials.walnut)
+  const top = new THREE.Mesh(new THREE.CylinderGeometry(0.7, 0.68, 0.08, 64), materials.corkDark)
+  top.position.y = 3.65
+  world.add(top)
+
+  const grainGeometry = new THREE.TorusGeometry(0.635, 0.009, 5, 64)
+  for (let index = 0; index < 4; index += 1) {
+    const grain = new THREE.Mesh(grainGeometry, materials.corkDark)
     grain.rotation.x = Math.PI / 2
-    grain.position.y = 3.35 + index * 0.13
-    grain.scale.set(1 - index * 0.035, 1 - index * 0.035, 1)
+    grain.position.y = 3.1 + index * 0.14
+    grain.scale.set(0.94 + pseudo(index * 17) * 0.08, 0.94 + pseudo(index * 19) * 0.08, 1)
     world.add(grain)
   }
-
-  const collar = new THREE.Mesh(new THREE.TorusGeometry(0.88, 0.09, 12, 64), materials.brass)
-  collar.rotation.x = Math.PI / 2
-  collar.position.y = 2.66
-  world.add(collar)
-
-  const valve = new THREE.Group()
-  valve.position.set(0.77, 2.78, 0.06)
-  const arm = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.16, 1.25, 18), materials.brass)
-  arm.rotation.z = Math.PI / 2
-  arm.position.x = 0.55
-  valve.add(arm)
-  const hub = new THREE.Mesh(new THREE.SphereGeometry(0.25, 24, 16), materials.brassDark)
-  hub.position.x = 1.12
-  valve.add(hub)
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.08, 0.72, 14), materials.brass)
-  stem.position.set(1.12, -0.42, 0)
-  valve.add(stem)
-  const drop = makeLathe([[0.02, 0], [0.18, 0.14], [0.25, 0.42], [0.22, 0.72], [0, 0.96]], materials.enamel, 36)
-  drop.position.set(1.12, -1.04, 0)
-  drop.rotation.z = Math.PI
-  drop.scale.set(0.82, 0.82, 0.46)
-  valve.add(drop)
-  const top = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.15, 0.22, 18), materials.brass)
-  top.position.set(1.12, 0.32, 0)
-  valve.add(top)
-  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.06, 10, 28), materials.brass)
-  handle.rotation.x = Math.PI / 2
-  handle.position.set(1.12, 0.51, 0)
-  valve.add(handle)
-  world.add(valve)
 }
 
 function createGround() {
-  const bed = new THREE.Mesh(new THREE.CylinderGeometry(2.02, 1.88, 0.26, 64), materials.soil)
-  bed.position.y = -2.86
+  const drainage = new THREE.Mesh(new THREE.CylinderGeometry(1.61, 1.55, 0.16, 72), materials.substrate)
+  drainage.position.y = -2.88
+  drainage.receiveShadow = true
+  world.add(drainage)
+
+  const bed = new THREE.Mesh(new THREE.CylinderGeometry(1.66, 1.59, 0.18, 72), materials.soil)
+  bed.position.y = -2.71
   bed.receiveShadow = true
   world.add(bed)
   const mound = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 28), materials.soilWet)
-  mound.scale.set(1.96, 0.48, 1.56)
-  mound.position.set(-0.08, -2.48, 0)
+  mound.scale.set(1.62, 0.28, 1.4)
+  mound.position.set(-0.05, -2.5, 0)
   mound.castShadow = true
   mound.receiveShadow = true
   world.add(mound)
 
-  const pebbleGeometry = new THREE.DodecahedronGeometry(0.22, 1)
-  for (let index = 0; index < 18; index += 1) {
+  const pebbleGeometry = new THREE.DodecahedronGeometry(0.12, 1)
+  for (let index = 0; index < 42; index += 1) {
     const pebble = new THREE.Mesh(pebbleGeometry, index % 3 ? materials.stone : materials.stoneLight)
     const angle = pseudo(index * 7) * Math.PI * 2
-    const radius = 0.55 + pseudo(index * 11) * 1.25
-    pebble.position.set(Math.cos(angle) * radius, -2.25 + pseudo(index * 17) * 0.18, Math.sin(angle) * radius)
-    pebble.scale.set(0.5 + pseudo(index * 13), 0.32 + pseudo(index * 19) * 0.56, 0.55 + pseudo(index * 23))
+    const radius = 0.28 + pseudo(index * 11) * 1.28
+    pebble.position.set(Math.cos(angle) * radius, -2.28 + pseudo(index * 17) * 0.13, Math.sin(angle) * radius)
+    pebble.scale.set(0.48 + pseudo(index * 13) * 0.82, 0.28 + pseudo(index * 19) * 0.42, 0.5 + pseudo(index * 23) * 0.76)
     pebble.rotation.set(pseudo(index) * 2, pseudo(index + 3) * 2, pseudo(index + 8) * 2)
     pebble.castShadow = true
     world.add(pebble)
   }
 
-  const mossGeometry = new THREE.IcosahedronGeometry(0.065, 2)
-  for (let index = 0; index < 220; index += 1) {
+  const mossGeometry = new THREE.IcosahedronGeometry(0.038, 2)
+  for (let index = 0; index < 360; index += 1) {
     const tone = index % 5 === 0 ? materials.mossLight : index % 2 ? materials.moss : materials.mossDark
     const moss = new THREE.Mesh(mossGeometry, tone)
     const angle = pseudo(index * 29) * Math.PI * 2
-    const radius = 0.22 + Math.sqrt(pseudo(index * 31)) * 1.78
-    moss.position.set(Math.cos(angle) * radius, -2.14 + pseudo(index * 37) * 0.25, Math.sin(angle) * radius)
-    const scale = 0.54 + pseudo(index * 41) * 1.08
+    const radius = 0.16 + Math.sqrt(pseudo(index * 31)) * 1.42
+    moss.position.set(Math.cos(angle) * radius, -2.2 + pseudo(index * 37) * 0.2, Math.sin(angle) * radius)
+    const scale = 0.48 + pseudo(index * 41) * 0.92
     moss.scale.set(scale * (0.8 + pseudo(index * 43) * 0.5), scale, scale * (0.85 + pseudo(index * 47) * 0.4))
     moss.castShadow = index % 3 === 0
     world.add(moss)
@@ -283,18 +261,18 @@ function createGround() {
 }
 
 function createLog() {
-  const trunk = cylinderBetween(new THREE.Vector3(-1.25, -1.95, -0.1), new THREE.Vector3(-0.55, 1.05, -0.48), 0.34, materials.bark, 18)
+  const trunk = cylinderBetween(new THREE.Vector3(-1.12, -2.08, -0.34), new THREE.Vector3(-0.48, 0.42, -0.58), 0.2, materials.bark, 28)
   world.add(trunk)
-  const branchA = cylinderBetween(new THREE.Vector3(-0.95, -0.52, -0.25), new THREE.Vector3(-1.62, 0.12, 0.02), 0.16, materials.barkLight, 14)
-  const branchB = cylinderBetween(new THREE.Vector3(-0.73, 0.24, -0.37), new THREE.Vector3(-0.18, 0.92, -0.23), 0.12, materials.barkLight, 14)
+  const branchA = cylinderBetween(new THREE.Vector3(-0.83, -0.92, -0.46), new THREE.Vector3(-1.28, -0.38, -0.28), 0.09, materials.barkLight, 18)
+  const branchB = cylinderBetween(new THREE.Vector3(-0.62, -0.08, -0.54), new THREE.Vector3(-0.27, 0.35, -0.45), 0.065, materials.barkLight, 16)
   world.add(branchA, branchB)
 
-  const mossGeometry = new THREE.IcosahedronGeometry(0.065, 2)
-  for (let index = 0; index < 72; index += 1) {
+  const mossGeometry = new THREE.IcosahedronGeometry(0.038, 2)
+  for (let index = 0; index < 96; index += 1) {
     const progress = pseudo(index * 17)
     const moss = new THREE.Mesh(mossGeometry, index % 4 ? materials.moss : materials.mossLight)
-    moss.position.set(-1.27 + progress * 0.73 + pseudo(index * 3) * 0.25, -1.82 + progress * 2.65, 0.06 + pseudo(index * 5) * 0.22)
-    const scale = 0.62 + pseudo(index * 7) * 1.08
+    moss.position.set(-1.12 + progress * 0.64 + pseudo(index * 3) * 0.16, -1.98 + progress * 2.24, -0.15 + pseudo(index * 5) * 0.14)
+    const scale = 0.56 + pseudo(index * 7) * 0.92
     moss.scale.set(scale, scale * 0.72, scale)
     world.add(moss)
   }
@@ -303,13 +281,13 @@ function createLog() {
 function createRoundPlant(position, height, phase) {
   const group = new THREE.Group()
   group.position.copy(position)
-  const stems = 7
+  const stems = 12
   for (let index = 0; index < stems; index += 1) {
     const angle = (index / stems) * Math.PI * 2 + phase
-    const reach = 0.28 + pseudo(index + phase) * 0.28
+    const reach = 0.16 + pseudo(index + phase) * 0.2
     const end = new THREE.Vector3(Math.cos(angle) * reach, height * (0.62 + pseudo(index * 4) * 0.38), Math.sin(angle) * reach)
     group.add(cylinderBetween(new THREE.Vector3(0, 0, 0), end, 0.018, materials.fernDark, 6))
-    const leaf = makeHeartLeaf(0.28 + pseudo(index * 11 + phase) * 0.08, index % 3 ? materials.roundLeaf : materials.roundLeafLight)
+    const leaf = makeHeartLeaf(0.145 + pseudo(index * 11 + phase) * 0.045, index % 3 ? materials.roundLeaf : materials.roundLeafLight)
     leaf.position.copy(end)
     leaf.rotation.z = Math.sin(angle) * 0.22
     leaf.rotation.y = -angle
@@ -341,15 +319,15 @@ async function createDetailedFerns() {
   if (sourcePlants.length === 0) throw new Error('Fern model contains no renderable plants')
 
   const placements = [
-    { position: [-0.96, -2.02, 0.02], height: 2.30, yaw: 0.14, lean: 0.08, phase: 0.4 },
-    { position: [0.52, -2.05, -0.58], height: 2.62, yaw: -0.34, lean: -0.06, phase: 1.7 },
-    { position: [0.98, -2.03, 0.06], height: 1.92, yaw: 0.48, lean: -0.05, phase: 3.1 },
-    { position: [-0.12, -2.08, -0.92], height: 2.18, yaw: -0.72, lean: 0.03, phase: 4.5 },
-    { position: [-1.18, -2.01, -0.52], height: 1.55, yaw: 0.78, lean: 0.04, phase: 5.3 }
+    { variant: 1, position: [-0.28, -2.08, 0.02], height: 1.22, yaw: 0.14, lean: 0.025, phase: 0.4 },
+    { variant: 1, position: [0.3, -2.08, -0.62], height: 2.35, yaw: -0.34, lean: -0.04, phase: 1.7 },
+    { variant: 2, position: [0.58, -2.08, 0.02], height: 1.48, yaw: 0.48, lean: -0.03, phase: 3.1 },
+    { variant: 3, position: [-0.1, -2.1, -0.88], height: 2.02, yaw: -0.72, lean: 0.02, phase: 4.5 },
+    { variant: 1, position: [0.08, -2.09, 0.28], height: 1.2, yaw: 1.26, lean: -0.015, phase: 6.2 }
   ]
 
-  placements.forEach((placement, index) => {
-    const plant = sourcePlants[index % sourcePlants.length].clone(true)
+  placements.forEach((placement) => {
+    const plant = sourcePlants[placement.variant % sourcePlants.length].clone(true)
     plant.traverse((node) => {
       if (!node.isMesh) return
       node.material = node.material.clone()
@@ -366,7 +344,7 @@ async function createDetailedFerns() {
     const center = bounds.getCenter(new THREE.Vector3())
     plant.position.set(-center.x, -bounds.min.y, -center.z)
     const scale = placement.height / Math.max(size.y, 0.001)
-    plant.scale.set(scale * 0.66, scale, scale * 0.66)
+    plant.scale.set(scale * 0.24, scale, scale * 0.24)
 
     const pivot = new THREE.Group()
     pivot.position.fromArray(placement.position)
@@ -388,13 +366,13 @@ function createMushroom(x, y, z, scale, glowing) {
   const group = new THREE.Group()
   group.position.set(x, y, z)
   group.scale.setScalar(scale)
-  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.11, 0.52, 12), materials.mushroomStem)
-  stem.position.y = 0.24
+  const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.045, 0.07, 0.38, 16), materials.mushroomStem)
+  stem.position.y = 0.18
   stem.castShadow = true
   group.add(stem)
-  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.28, 24, 12, 0, Math.PI * 2, 0, Math.PI / 2), glowing ? materials.mushroomGlow : materials.mushroomCap)
+  const cap = new THREE.Mesh(new THREE.SphereGeometry(0.18, 28, 16, 0, Math.PI * 2, 0, Math.PI / 2), glowing ? materials.mushroomGlow : materials.mushroomCap)
   cap.scale.y = 0.48
-  cap.position.y = 0.52
+  cap.position.y = 0.38
   cap.castShadow = true
   group.add(cap)
   world.add(group)
@@ -402,7 +380,8 @@ function createMushroom(x, y, z, scale, glowing) {
 
 function createSnail() {
   const snail = new THREE.Group()
-  snail.position.set(-0.45, -1.88, 1.28)
+  snail.position.set(-0.28, -2.0, 1.18)
+  snail.scale.setScalar(0.72)
   const body = new THREE.Mesh(new THREE.SphereGeometry(0.16, 20, 12), materials.snailBody)
   body.scale.set(1.8, 0.55, 0.72)
   snail.add(body)
@@ -431,8 +410,8 @@ function createSnail() {
 }
 
 function createFireflies() {
-  const coreGeometry = new THREE.SphereGeometry(0.027, 10, 8)
-  const haloGeometry = new THREE.SphereGeometry(0.12, 12, 8)
+  const coreGeometry = new THREE.SphereGeometry(0.016, 10, 8)
+  const haloGeometry = new THREE.SphereGeometry(0.068, 12, 8)
   for (let index = 0; index < 16; index += 1) {
     const group = new THREE.Group()
     const coreMaterial = new THREE.MeshBasicMaterial({ color: 0xfff2a4 })
@@ -452,10 +431,10 @@ function createCondensation() {
   for (let index = 0; index < 32; index += 1) {
     const drop = new THREE.Mesh(geometry, materials.condensation)
     const angle = -1.05 + pseudo(index * 7) * 2.1
-    const y = -1.55 + pseudo(index * 11) * 3.65
-    const bodyRadius = 2.17 - Math.max(0, y - 0.5) * 0.22
+    const y = -1.5 + pseudo(index * 11) * 3.72
+    const bodyRadius = y > 1.68 ? THREE.MathUtils.lerp(1.84, 0.92, (y - 1.68) / 0.9) : 1.84
     drop.position.set(Math.sin(angle) * bodyRadius, y, Math.cos(angle) * bodyRadius)
-    const size = 0.025 + pseudo(index * 13) * 0.045
+    const size = 0.017 + pseudo(index * 13) * 0.032
     drop.scale.set(size * 0.72, size * 1.35, size * 0.45)
     drop.userData = { originY: y, speed: 0.018 + pseudo(index * 17) * 0.035 }
     condensation.push(drop)
@@ -468,7 +447,7 @@ function createWaterDrops() {
   for (let index = 0; index < 36; index += 1) {
     const drop = new THREE.Mesh(geometry, materials.water)
     drop.visible = false
-    drop.userData = { delay: index * 0.035, x: -1.25 + pseudo(index * 31) * 2.5, z: -0.7 + pseudo(index * 37) * 1.45 }
+    drop.userData = { delay: index * 0.035, x: -1.08 + pseudo(index * 31) * 2.16, z: -0.62 + pseudo(index * 37) * 1.24 }
     waterDrops.push(drop)
     world.add(drop)
   }
@@ -478,18 +457,21 @@ async function buildTerrarium() {
   createGround()
   createLog()
   await createDetailedFerns()
-  createRoundPlant(new THREE.Vector3(0.12, -1.98, 0.72), 1.24, 0.8)
-  createRoundPlant(new THREE.Vector3(-0.82, -1.94, 0.82), 0.98, 4.2)
-  createMushroom(-1.34, -1.94, 1.05, 1.1, true)
-  createMushroom(-0.98, -1.95, 1.22, 0.72, false)
-  createMushroom(1.35, -1.96, 0.9, 0.86, true)
-  createMushroom(1.02, -1.98, 1.3, 0.55, false)
+  createRoundPlant(new THREE.Vector3(0.08, -2.06, 0.76), 0.82, 0.8)
+  createRoundPlant(new THREE.Vector3(-0.72, -2.04, 0.78), 0.68, 4.2)
+  createRoundPlant(new THREE.Vector3(0.92, -2.06, 0.54), 0.62, 2.8)
+  createMushroom(-1.1, -2.07, 0.98, 0.82, true)
+  createMushroom(-0.86, -2.08, 1.16, 0.58, false)
+  createMushroom(1.12, -2.08, 0.84, 0.68, true)
+  createMushroom(0.9, -2.08, 1.16, 0.46, false)
+  createMushroom(0.58, -2.08, 1.28, 0.38, false)
+  createMushroom(-0.5, -2.08, 1.3, 0.34, true)
   createSnail()
   createFireflies()
   createCondensation()
   createWaterDrops()
   createBottle()
-  createStopperAndValve()
+  createStopper()
 }
 
 await buildTerrarium()
@@ -517,11 +499,11 @@ function getNightMix() {
 }
 
 function updateLighting(nightMix) {
-  hemiLight.intensity = THREE.MathUtils.lerp(1.5, 0.58, nightMix)
-  keyLight.intensity = THREE.MathUtils.lerp(3.2, 1.15, nightMix)
+  hemiLight.intensity = THREE.MathUtils.lerp(1.5, 0.84, nightMix)
+  keyLight.intensity = THREE.MathUtils.lerp(3.2, 1.58, nightMix)
   rimLight.intensity = THREE.MathUtils.lerp(2.2, 3.1, nightMix)
   warmFill.intensity = THREE.MathUtils.lerp(6, 15, nightMix)
-  renderer.toneMappingExposure = THREE.MathUtils.lerp(1.08, 0.92, nightMix)
+  renderer.toneMappingExposure = THREE.MathUtils.lerp(1.08, 1, nightMix)
 }
 
 function updateAnimation(time, deltaSeconds) {
@@ -570,7 +552,7 @@ function updateAnimation(time, deltaSeconds) {
     const progress = (waterElapsed - drop.userData.delay) / 1.05
     drop.visible = progress >= 0 && progress <= 1
     if (drop.visible) {
-      drop.position.set(drop.userData.x, 2.1 - progress * 4.0, drop.userData.z)
+      drop.position.set(drop.userData.x, 2.45 - progress * 4.3, drop.userData.z)
       drop.scale.y = 1.5 + progress * 1.2
     }
   })
@@ -682,14 +664,14 @@ if (runtime) {
       {
         shape: 'polygon', action: 'drag',
         points: [
-          { x: 171, y: 8 }, { x: 261, y: 8 }, { x: 285, y: 60 }, { x: 311, y: 91 },
-          { x: 363, y: 151 }, { x: 397, y: 232 }, { x: 393, y: 444 }, { x: 348, y: 488 },
-          { x: 77, y: 488 }, { x: 29, y: 441 }, { x: 35, y: 218 }, { x: 76, y: 137 },
-          { x: 134, y: 79 }, { x: 151, y: 56 }
+          { x: 175, y: 14 }, { x: 245, y: 14 }, { x: 253, y: 72 }, { x: 291, y: 92 },
+          { x: 330, y: 132 }, { x: 354, y: 182 }, { x: 354, y: 448 }, { x: 330, y: 482 },
+          { x: 90, y: 482 }, { x: 66, y: 448 }, { x: 66, y: 182 }, { x: 90, y: 132 },
+          { x: 129, y: 92 }, { x: 167, y: 72 }
         ],
         hostGestures: ['move', 'scale-wheel', 'scale-hold']
       },
-      { shape: 'ellipse', action: 'interactive', x: 285, y: 58, width: 82, height: 112 }
+      { shape: 'ellipse', action: 'interactive', x: 168, y: 10, width: 84, height: 78 }
     ]
   })
   runtime.setBubbleAnchor({ x: 211, y: 8 })

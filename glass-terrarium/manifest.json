@@ -8,15 +8,15 @@
   "preview": "preview.png",
   "operationGuide": [
     {
-      "zh-CN": "点击金色水滴：给生态瓶浇水",
-      "zh-TW": "點擊金色水滴：為生態瓶澆水",
-      "en": "Click the golden droplet: water the terrarium",
-      "es": "Haz clic en la gota dorada: regar el terrario",
-      "ja": "金色のしずくをクリック：テラリウムに水をやる",
-      "ko": "금빛 물방울 클릭: 테라리움에 물주기",
-      "ru": "Нажмите золотую каплю: полить террариум",
-      "de": "Goldenen Tropfen anklicken: Terrarium gießen",
-      "fr": "Cliquer sur la goutte dorée : arroser le terrarium"
+      "zh-CN": "点击软木塞：给生态瓶浇水",
+      "zh-TW": "點擊軟木塞：為生態瓶澆水",
+      "en": "Click the cork: water the terrarium",
+      "es": "Haz clic en el corcho: regar el terrario",
+      "ja": "コルク栓をクリック：テラリウムに水をやる",
+      "ko": "코르크 마개 클릭: 테라리움에 물주기",
+      "ru": "Нажмите на пробку: полить террариум",
+      "de": "Korken anklicken: Terrarium gießen",
+      "fr": "Cliquer sur le bouchon en liège : arroser le terrarium"
     }
   ],
   "presentation": {

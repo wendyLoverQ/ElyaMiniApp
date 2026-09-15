@@ -1,6 +1,6 @@
 :root {
   color-scheme: only light;
-  --valve-glow: rgb(75 229 216 / 88%);
+  --cork-glow: rgb(214 170 108 / 72%);
   --error: #a74d3b;
 }
 
@@ -38,10 +38,10 @@ body {
 
 .water-control {
   position: absolute;
-  left: 285px;
-  top: 58px;
-  width: 82px;
-  height: 112px;
+  left: 168px;
+  top: 10px;
+  width: 84px;
+  height: 78px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -52,14 +52,14 @@ body {
 .water-control::after {
   content: "";
   position: absolute;
-  left: 27px;
-  top: 46px;
-  width: 30px;
-  height: 44px;
-  border-radius: 56% 44% 62% 38%;
+  left: 9px;
+  top: 7px;
+  width: 64px;
+  height: 58px;
+  border-radius: 48%;
   opacity: 0;
-  box-shadow: 0 0 0 1px rgb(191 255 246 / 70%), 0 0 24px var(--valve-glow);
-  transform: scale(0.82);
+  box-shadow: 0 0 0 1px rgb(243 218 176 / 62%), 0 0 22px var(--cork-glow);
+  transform: scale(0.9);
   transition: opacity 160ms ease, transform 160ms ease;
 }
 
