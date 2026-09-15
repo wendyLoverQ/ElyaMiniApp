@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>玻璃生态瓶</title>
+    <link rel="preload" href="terrarium-base-v2.png" as="image">
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
@@ -12,8 +13,6 @@
         id="scene"
         width="420"
         height="500"
-        data-elya-hit="drag"
-        data-elya-host-gestures="move scale-wheel scale-hold"
       ></canvas>
       <button
         id="water-control"
@@ -22,9 +21,7 @@
         data-elya-hit="interactive"
         aria-label="给生态瓶浇水"
         title="给生态瓶浇水"
-      >
-        <span class="water-drop" aria-hidden="true"></span>
-      </button>
+      ></button>
       <span id="storage-status" class="storage-status" aria-hidden="true">!</span>
     </main>
     <script type="module" src="main.js"></script>

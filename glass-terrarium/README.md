@@ -6,9 +6,10 @@
 
 - `manifest.json`：Elya Mini APP 清单、设置与操作说明
 - `index.html`：透明画布与浇水控件
-- `styles.css`：宿主窗口尺寸与金色水滴控件
-- `main.js`：Canvas 场景、动画、昼夜、浇水和持久状态
-- `preview.png`：资源预览
+- `styles.css`：宿主窗口尺寸与黄铜阀门命中区
+- `terrarium-base-v2.png`：高细节透明生态瓶主体
+- `main.js`：动态凝露、萤火虫、昼夜、浇水、生长和持久状态
+- `preview.png`：当前高细节资源预览
 
 ## 操作
 
