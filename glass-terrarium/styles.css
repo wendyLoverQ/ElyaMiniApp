@@ -1,6 +1,6 @@
 :root {
   color-scheme: only light;
-  --valve-glow: rgb(88 220 207 / 78%);
+  --valve-glow: rgb(75 229 216 / 88%);
   --error: #a74d3b;
 }
 
@@ -19,21 +19,29 @@ body {
 }
 
 .terrarium,
-#scene {
+.stage {
   width: 420px;
   height: 500px;
-  display: block;
 }
 
 .terrarium { position: relative; }
-#scene { pointer-events: none; }
+.stage { position: absolute; inset: 0; }
+
+.stage canvas {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 420px;
+  height: 500px;
+  pointer-events: none;
+}
 
 .water-control {
   position: absolute;
-  left: 280px;
+  left: 285px;
   top: 58px;
-  width: 75px;
-  height: 110px;
+  width: 82px;
+  height: 112px;
   padding: 0;
   border: 0;
   border-radius: 50%;
@@ -44,14 +52,14 @@ body {
 .water-control::after {
   content: "";
   position: absolute;
-  left: 21px;
-  top: 24px;
-  width: 32px;
-  height: 46px;
-  border-radius: 52% 48% 58% 42%;
+  left: 27px;
+  top: 46px;
+  width: 30px;
+  height: 44px;
+  border-radius: 56% 44% 62% 38%;
   opacity: 0;
-  box-shadow: 0 0 0 1px rgb(180 255 244 / 58%), 0 0 24px var(--valve-glow);
-  transform: rotate(-8deg) scale(0.84);
+  box-shadow: 0 0 0 1px rgb(191 255 246 / 70%), 0 0 24px var(--valve-glow);
+  transform: scale(0.82);
   transition: opacity 160ms ease, transform 160ms ease;
 }
 
@@ -59,7 +67,7 @@ body {
 .water-control:focus-visible::after,
 .water-control.is-watering::after {
   opacity: 1;
-  transform: rotate(-8deg) scale(1);
+  transform: scale(1);
 }
 
 .water-control:focus-visible { outline: none; }
