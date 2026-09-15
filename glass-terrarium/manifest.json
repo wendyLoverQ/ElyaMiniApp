@@ -1,0 +1,160 @@
+{
+  "type": "web-pet",
+  "title": "玻璃生态瓶",
+  "entry": "index.html",
+  "width": 420,
+  "height": 500,
+  "storageScope": "instance",
+  "preview": "preview.png",
+  "operationGuide": [
+    {
+      "zh-CN": "点击金色水滴：给生态瓶浇水",
+      "zh-TW": "點擊金色水滴：為生態瓶澆水",
+      "en": "Click the golden droplet: water the terrarium",
+      "es": "Haz clic en la gota dorada: regar el terrario",
+      "ja": "金色のしずくをクリック：テラリウムに水をやる",
+      "ko": "금빛 물방울 클릭: 테라리움에 물주기",
+      "ru": "Нажмите золотую каплю: полить террариум",
+      "de": "Goldenen Tropfen anklicken: Terrarium gießen",
+      "fr": "Cliquer sur la goutte dorée : arroser le terrarium"
+    }
+  ],
+  "presentation": {
+    "viewport": {
+      "preferredWidth": 420,
+      "preferredHeight": 500,
+      "minWidth": 420,
+      "minHeight": 500,
+      "maxWidth": 420,
+      "maxHeight": 500,
+      "resize": "none",
+      "aspectRatio": "preserve"
+    },
+    "visualScale": {
+      "owner": "host",
+      "default": 1,
+      "min": 0.5,
+      "max": 3,
+      "gestures": [
+        "scale-wheel",
+        "scale-hold"
+      ]
+    }
+  },
+  "settings": [
+    {
+      "key": "lighting",
+      "label": {
+        "zh-CN": "光照",
+        "zh-TW": "光照",
+        "en": "Lighting",
+        "es": "Iluminación",
+        "ja": "照明",
+        "ko": "조명",
+        "ru": "Освещение",
+        "de": "Beleuchtung",
+        "fr": "Éclairage"
+      },
+      "type": "select",
+      "default": "auto",
+      "options": [
+        {
+          "value": "auto",
+          "label": {
+            "zh-CN": "跟随昼夜",
+            "zh-TW": "跟隨晝夜",
+            "en": "Follow day and night",
+            "es": "Seguir el día y la noche",
+            "ja": "昼夜に合わせる",
+            "ko": "낮과 밤에 맞춤",
+            "ru": "Следовать смене дня и ночи",
+            "de": "Tag und Nacht folgen",
+            "fr": "Suivre le jour et la nuit"
+          }
+        },
+        {
+          "value": "day",
+          "label": {
+            "zh-CN": "林间白昼",
+            "zh-TW": "林間白晝",
+            "en": "Woodland day",
+            "es": "Día en el bosque",
+            "ja": "森の昼",
+            "ko": "숲의 낮",
+            "ru": "Лесной день",
+            "de": "Waldtag",
+            "fr": "Jour en forêt"
+          }
+        },
+        {
+          "value": "night",
+          "label": {
+            "zh-CN": "萤火夜色",
+            "zh-TW": "螢火夜色",
+            "en": "Firefly night",
+            "es": "Noche de luciérnagas",
+            "ja": "蛍の夜",
+            "ko": "반딧불이 밤",
+            "ru": "Ночь светлячков",
+            "de": "Glühwürmchennacht",
+            "fr": "Nuit aux lucioles"
+          }
+        }
+      ]
+    },
+    {
+      "key": "growthSpeed",
+      "label": {
+        "zh-CN": "生长速度",
+        "zh-TW": "生長速度",
+        "en": "Growth speed",
+        "es": "Velocidad de crecimiento",
+        "ja": "成長速度",
+        "ko": "성장 속도",
+        "ru": "Скорость роста",
+        "de": "Wachstumsgeschwindigkeit",
+        "fr": "Vitesse de croissance"
+      },
+      "type": "range",
+      "default": 1,
+      "min": 0.25,
+      "max": 3,
+      "step": 0.25
+    },
+    {
+      "key": "fireflies",
+      "label": {
+        "zh-CN": "萤火虫数量",
+        "zh-TW": "螢火蟲數量",
+        "en": "Firefly count",
+        "es": "Cantidad de luciérnagas",
+        "ja": "蛍の数",
+        "ko": "반딧불이 수",
+        "ru": "Количество светлячков",
+        "de": "Glühwürmchenanzahl",
+        "fr": "Nombre de lucioles"
+      },
+      "type": "range",
+      "default": 8,
+      "min": 0,
+      "max": 16,
+      "step": 1
+    },
+    {
+      "key": "condensation",
+      "label": {
+        "zh-CN": "玻璃凝露",
+        "zh-TW": "玻璃凝露",
+        "en": "Glass condensation",
+        "es": "Condensación del vidrio",
+        "ja": "ガラスの結露",
+        "ko": "유리 결로",
+        "ru": "Конденсат на стекле",
+        "de": "Kondenswasser am Glas",
+        "fr": "Condensation sur le verre"
+      },
+      "type": "boolean",
+      "default": true
+    }
+  ]
+}
