@@ -261,10 +261,10 @@ function createGround() {
 }
 
 function createLog() {
-  const trunk = cylinderBetween(new THREE.Vector3(-1.12, -2.08, -0.34), new THREE.Vector3(-0.48, 0.42, -0.58), 0.2, materials.bark, 28)
+  const trunk = cylinderBetween(new THREE.Vector3(-0.92, -2.14, -0.34), new THREE.Vector3(-0.42, -0.02, -0.58), 0.14, materials.bark, 28)
   world.add(trunk)
-  const branchA = cylinderBetween(new THREE.Vector3(-0.83, -0.92, -0.46), new THREE.Vector3(-1.28, -0.38, -0.28), 0.09, materials.barkLight, 18)
-  const branchB = cylinderBetween(new THREE.Vector3(-0.62, -0.08, -0.54), new THREE.Vector3(-0.27, 0.35, -0.45), 0.065, materials.barkLight, 16)
+  const branchA = cylinderBetween(new THREE.Vector3(-0.74, -1.38, -0.46), new THREE.Vector3(-1.18, -0.98, -0.28), 0.065, materials.barkLight, 18)
+  const branchB = cylinderBetween(new THREE.Vector3(-0.58, -0.48, -0.54), new THREE.Vector3(-0.25, -0.18, -0.45), 0.045, materials.barkLight, 16)
   world.add(branchA, branchB)
 
   const mossGeometry = new THREE.IcosahedronGeometry(0.038, 2)
@@ -299,6 +299,31 @@ function createRoundPlant(position, height, phase) {
   world.add(group)
 }
 
+// 细藤使用真实曲线管体和独立小叶，补足瓶内纵向层次而不增加块状体积。
+// 开发：Codex / GPT / 模型 ID 无法确认
+function createFineVine(position, height, lean, phase) {
+  const group = new THREE.Group()
+  group.position.copy(position)
+  const curve = new THREE.QuadraticBezierCurve3(
+    new THREE.Vector3(0, 0, 0),
+    new THREE.Vector3(lean * 0.45, height * 0.54, 0),
+    new THREE.Vector3(lean, height, 0)
+  )
+  group.add(cylinderBetween(new THREE.Vector3(0, 0, 0), curve.getPoint(1), 0.012, materials.fernDark, 6))
+  for (let index = 1; index <= 10; index += 1) {
+    const progress = index / 11
+    const point = curve.getPoint(progress)
+    const leaf = makeHeartLeaf(0.075 + pseudo(index * 19 + phase) * 0.03, index % 3 ? materials.roundLeaf : materials.roundLeafLight)
+    leaf.position.copy(point)
+    leaf.rotation.z = (index % 2 ? 1 : -1) * (0.64 + pseudo(index * 23) * 0.28)
+    leaf.rotation.y = pseudo(index * 29 + phase) * 0.34
+    group.add(leaf)
+  }
+  group.userData = { baseZ: 0, phase, amplitude: 0.012 }
+  animatedFronds.push(group)
+  world.add(group)
+}
+
 // 真实植株模型按独立根节点摆放，因此每株可以分别受风与浇水动作影响。
 // 开发：Codex / GPT / 模型 ID 无法确认
 async function createDetailedFerns() {
@@ -319,10 +344,10 @@ async function createDetailedFerns() {
   if (sourcePlants.length === 0) throw new Error('Fern model contains no renderable plants')
 
   const placements = [
-    { variant: 1, position: [-0.28, -2.08, 0.02], height: 1.22, yaw: 0.14, lean: 0.025, phase: 0.4 },
-    { variant: 1, position: [0.3, -2.08, -0.62], height: 2.35, yaw: -0.34, lean: -0.04, phase: 1.7 },
-    { variant: 2, position: [0.58, -2.08, 0.02], height: 1.48, yaw: 0.48, lean: -0.03, phase: 3.1 },
-    { variant: 3, position: [-0.1, -2.1, -0.88], height: 2.02, yaw: -0.72, lean: 0.02, phase: 4.5 },
+    { variant: 1, position: [-0.5, -2.08, 0.02], height: 2.08, yaw: 0.14, lean: 0.03, phase: 0.4 },
+    { variant: 1, position: [0.28, -2.08, -0.7], height: 2.72, yaw: -0.34, lean: -0.04, phase: 1.7 },
+    { variant: 2, position: [0.58, -2.08, 0.02], height: 1.52, yaw: 0.48, lean: -0.03, phase: 3.1 },
+    { variant: 3, position: [-0.1, -2.1, -1], height: 2.5, yaw: -0.72, lean: 0.02, phase: 4.5 },
     { variant: 1, position: [0.08, -2.09, 0.28], height: 1.2, yaw: 1.26, lean: -0.015, phase: 6.2 }
   ]
 
@@ -458,8 +483,11 @@ async function buildTerrarium() {
   createLog()
   await createDetailedFerns()
   createRoundPlant(new THREE.Vector3(0.08, -2.06, 0.76), 0.82, 0.8)
-  createRoundPlant(new THREE.Vector3(-0.72, -2.04, 0.78), 0.68, 4.2)
+  createRoundPlant(new THREE.Vector3(-0.56, -2.04, 0.78), 0.68, 4.2)
   createRoundPlant(new THREE.Vector3(0.92, -2.06, 0.54), 0.62, 2.8)
+  createFineVine(new THREE.Vector3(-0.68, -2.05, -0.98), 1.95, 0.32, 0.6)
+  createFineVine(new THREE.Vector3(0.72, -2.05, -1.02), 1.7, -0.24, 2.8)
+  createFineVine(new THREE.Vector3(-0.28, -2.05, -1.12), 2.16, 0.18, 4.8)
   createMushroom(-1.1, -2.07, 0.98, 0.82, true)
   createMushroom(-0.86, -2.08, 1.16, 0.58, false)
   createMushroom(1.12, -2.08, 0.84, 0.68, true)
