@@ -15,7 +15,7 @@ function drawTransparentLighting(g) {
   else drawMoon(g, mp.x, mp.y, mp.a * ENV.dark * Math.pow(1 - ENV.cloud, 1.5) * (1 - ENV.fog * 0.7) * (1 - ENV.rain * 0.6));
 }
 
-// Codex / GPT / 模型 ID 无法确认: downsample browser Canvas alpha, merge occupied scanline runs, and submit only visible pixels.
+// Codex / GPT / 模型 ID 无法确认: DOM controls own their visible area; exclude scene pixels beneath controls before submitting alpha runs.
 const surfaceCanvas = document.createElement('canvas');
 const surfaceContext = surfaceCanvas.getContext('2d', { willReadFrequently: true });
 let surfaceAt = -Infinity;
@@ -23,12 +23,32 @@ function publishKoiSurface(force = false) {
   const now = performance.now();
   if (!force && now - surfaceAt < 60) return;
   surfaceAt = now;
+  const controls = [];
+  const addDOM = (element, action) => {
+    if (!element || element.hidden || element.closest('[hidden], [inert], [aria-hidden="true"]')) return;
+    const style = getComputedStyle(element);
+    if (style.display === 'none' || style.visibility === 'hidden' || +style.opacity === 0) return;
+    const r = element.getBoundingClientRect(), x = Math.max(0, r.x), y = Math.max(0, r.y);
+    const width = Math.min(innerWidth, r.right) - x, height = Math.min(innerHeight, r.bottom) - y;
+    if (width > 0 && height > 0) controls.push({ shape: element.classList.contains('gear') ? 'ellipse' : 'rect', action, x, y, width, height, ...(action === 'drag' ? { hostGestures: ['move','scale-wheel'] } : {}) });
+  };
+  addDOM(document.getElementById('almanac'), 'drag');
+  addDOM(document.getElementById('move-handle'), 'drag');
+  addDOM(document.getElementById('feed-koi'), 'interactive');
+  addDOM(gear, 'interactive');
+  if (panelOpen) addDOM(panel, 'interactive');
+  addDOM(document.getElementById('koi-runtime-error'), 'interactive');
   const cell = Math.max(4, Math.ceil(Math.max(innerWidth / 240, innerHeight / 160)));
   const cw = Math.ceil(innerWidth / cell), ch = Math.ceil(innerHeight / cell);
   if (surfaceCanvas.width !== cw || surfaceCanvas.height !== ch) { surfaceCanvas.width = cw; surfaceCanvas.height = ch; }
   surfaceContext.clearRect(0, 0, cw, ch);
   surfaceContext.drawImage(cvs, 0, 0, innerWidth / cell, innerHeight / cell);
   const pixels = surfaceContext.getImageData(0, 0, cw, ch).data;
+  for (const control of controls) {
+    const x0 = Math.floor(control.x / cell), x1 = Math.min(cw, Math.ceil((control.x + control.width) / cell));
+    const y0 = Math.floor(control.y / cell), y1 = Math.min(ch, Math.ceil((control.y + control.height) / cell));
+    for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) pixels[(y * cw + x) * 4 + 3] = 0;
+  }
   const regions = []; let previous = new Map();
   for (let y = 0; y < ch; y++) {
     const current = new Map();
@@ -45,21 +65,7 @@ function publishKoiSurface(force = false) {
     }
     previous = current;
   }
-  const addDOM = (element, action) => {
-    if (!element || element.hidden || element.closest('[hidden], [inert], [aria-hidden="true"]')) return;
-    const style = getComputedStyle(element);
-    if (style.display === 'none' || style.visibility === 'hidden' || +style.opacity === 0) return;
-    const r = element.getBoundingClientRect(), x = Math.max(0, r.x), y = Math.max(0, r.y);
-    const width = Math.min(innerWidth, r.right) - x, height = Math.min(innerHeight, r.bottom) - y;
-    if (width > 0 && height > 0) regions.push({ shape: element.classList.contains('gear') ? 'ellipse' : 'rect', action, x, y, width, height, ...(action === 'drag' ? { hostGestures: ['move','scale-wheel'] } : {}) });
-  };
-  addDOM(document.getElementById('almanac'), 'drag');
-  addDOM(document.getElementById('move-handle'), 'drag');
-  addDOM(document.getElementById('feed-koi'), 'interactive');
-  addDOM(gear, 'interactive');
-  if (panelOpen) addDOM(panel, 'interactive');
-  addDOM(document.getElementById('koi-runtime-error'), 'interactive');
-  window.elyaPet.setInteractionSurface({ width: innerWidth, height: innerHeight, regions });
+  window.elyaPet.setInteractionSurface({ width: innerWidth, height: innerHeight, regions: [...regions, ...controls] });
 }
 
 function connectElya() {

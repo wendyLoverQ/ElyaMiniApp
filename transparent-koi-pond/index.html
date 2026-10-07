@@ -18,7 +18,8 @@
     --lotus-ink: #3d1424;
     --serif: "Noto Serif SC", "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "STSong", "SimSun", serif;
     --sans: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
-    color-scheme: dark;
+    /* Codex / GPT / 模型 ID 无法确认: match Elya's fixed iframe scheme so transparent pixels stay transparent. */
+    color-scheme: only light;
     /* 屏幕边上被任务栏占掉的宽度，由 js/main.js 的 fitScreen() 填 */
     --edge-t: max(env(safe-area-inset-top, 0px), var(--bar-t, 0px));
     --edge-r: max(env(safe-area-inset-right, 0px), var(--bar-r, 0px));
