@@ -220,114 +220,64 @@ function drawLanterns(g) {
   }
 }
 
-/* 青蛙：蹲在荷叶上眨眼、鼓腮；点一下跳进水里，游到另一片荷叶再爬上去 */
+/* Codex / GPT / 模型 ID 无法确认: open-water frogs retain swimming, jumping and pointer interaction. */
 function frogWant() { return S.frogs && season() !== 'winter' ? (W * H > 1.6e6 ? 2 : 1) : 0; }
-function padPoint(p, ox, oy) {
-  const c = Math.cos(p.rot), s = Math.sin(p.rot);
-  return [p.x + ox * c - oy * s, p.y + ox * s + oy * c];
-}
-function freePadSpot(p) {
-  // 有荷花的叶子，避开花的位置
-  const a = rand(0, TAU), r = rand(0.1, 0.35) * p.R;
-  return p.flower ? [-p.R * 0.3 + Math.cos(a) * p.R * 0.12, p.R * 0.2 + Math.sin(a) * p.R * 0.12] : [Math.cos(a) * r, Math.sin(a) * r];
-}
 function waterSpotNear(x, y, dir, dist) {
   for (let i = 0; i < 16; i++) {
     const a = dir + rand(-0.7, 0.7) * (i < 8 ? 1 : 2.5), d = dist * rand(0.8, 1.2);
     const tx = x + Math.cos(a) * d, ty = y + Math.sin(a) * d;
-    if (tx > 40 && tx < W - 40 && ty > 40 && ty < H - 40 && !padAt(tx, ty, 1.1)) return [tx, ty];
+    if (tx > 40 && tx < W - 40 && ty > 40 && ty < H - 40) return [tx, ty];
   }
   return [clamp(x + 80, 40, W - 40), clamp(y + 80, 40, H - 40)];
 }
 
-// 青蛙只待在整片都在屏幕里的大荷叶上
-function frogPads() {
-  return pads.filter(p => p.R > 38 * SCALE && p.bx > p.R * 0.6 && p.bx < W - p.R * 0.6 && p.by > p.R * 0.6 && p.by < H - p.R * 0.6);
-}
+// Codex / GPT / 模型 ID 无法确认: frogs swim and jump between water targets; no leaf geometry or landing sites remain.
 class Frog {
   constructor() {
     this.s = rand(14, 17) * SCALE;
-    const used = frogs.map(f => f.pad);
-    const choices = frogPads().filter(p => !used.includes(p));
-    this.pad = choices[(Math.random() * choices.length) | 0] || pads[0];
-    [this.ox, this.oy] = freePadSpot(this.pad);
-    this.state = 'sit';
-    this.face = rand(0, TAU);
-    [this.x, this.y] = padPoint(this.pad, this.ox, this.oy);
-    this.blinkT = rand(2, 6); this.blink = 0;
-    this.croakT = rand(3, 10); this.croak = -1;
-    this.jumpT = rand(70, 180);
-    this.phase = 0; this.t = 0; this.z = 0.04;
+    this.x = rand(W * 0.2, W * 0.8); this.y = rand(H * 0.2, H * 0.8);
+    this.face = rand(0, TAU); this.state = 'swim';
+    this.blinkT = rand(2, 6); this.blink = 0; this.croak = -1;
+    this.jumpT = rand(70, 180); this.phase = 0; this.t = 0; this.z = 0.04;
+    this.pickTarget();
+  }
+  pickTarget() {
+    const [x, y] = waterSpotNear(this.x, this.y, this.face, rand(80, 130) * SCALE);
+    this.target = {x, y};
   }
   hit(x, y) { return Math.hypot(x - this.x, y - this.y) < this.s * 1.7; }
-  jumpTo(tx, ty, toPad, hmax) {
-    this.from = [this.x, this.y]; this.to = [tx, ty]; this.toPad = toPad;
-    this.t = 0; this.dur = toPad ? 0.45 : 0.6; this.hmax = hmax;
-    this.face = Math.atan2(ty - this.y, tx - this.x);
-    this.state = 'jump';
-    if (this.pad) { this.pad.pulse = 0.6; this.pad.pt = 0; }
+  jumpTo(tx, ty, hmax) {
+    this.from = [this.x, this.y]; this.to = [tx, ty];
+    this.t = 0; this.dur = 0.6; this.hmax = hmax;
+    this.face = Math.atan2(ty - this.y, tx - this.x); this.state = 'jump';
   }
   leaveToWater() {
     const [tx, ty] = waterSpotNear(this.x, this.y, this.face, rand(80, 130) * SCALE);
-    this.jumpTo(tx, ty, null, 1);
+    this.jumpTo(tx, ty, 1);
   }
   poke() {
-    if (this.state === 'sit') this.leaveToWater();
-    else if (this.state === 'swim') { this.phase += 2; this.kick = 0.8; addRipple(this.x, this.y, 26, 1.2, 0.6); }
+    if (this.state === 'swim') { this.phase += 2; this.kick = 0.8; addRipple(this.x, this.y, 26, 1.2, 0.6); }
   }
   update(dt) {
     this.blinkT -= dt; this.blink -= dt;
     if (this.blinkT < 0) { this.blink = 0.14; this.blinkT = rand(2, 7); }
-    if (this.state === 'sit') {
-      [this.x, this.y] = padPoint(this.pad, this.ox, this.oy);
-      this.croakT -= dt * (1 + ENV.rain * 2 + ENV.dark);
-      if (this.croakT < 0) { this.croak = 0; this.croakT = rand(7, 20); sndCroak(this.x); }
-      if (this.croak >= 0) {
-        const before = this.croak;
-        this.croak += dt;
-        if ((before < 0.3 && this.croak >= 0.3) || (before < 0.9 && this.croak >= 0.9)) addRipple(this.x, this.y, this.s * 2.2, 0.9, 0.35);
-        if (this.croak > 1.2) this.croak = -1;
-      }
-      // 鼠标停在附近时，转过来看你
-      if (pointer.inside && Math.hypot(pointer.x - this.x, pointer.y - this.y) < 170) {
-        let da = Math.atan2(pointer.y - this.y, pointer.x - this.x) - this.face;
-        da = Math.atan2(Math.sin(da), Math.cos(da));
-        this.face += clamp(da, -dt * 1.5, dt * 1.5);
-      }
-      this.jumpT -= dt;
-      if (this.jumpT < 0) { this.jumpT = rand(80, 200); this.leaveToWater(); }
-    } else if (this.state === 'jump') {
+    if (this.state === 'jump') {
       this.t += dt / this.dur;
       const k = Math.min(1, this.t);
       this.x = lerp(this.from[0], this.to[0], k); this.y = lerp(this.from[1], this.to[1], k);
-      if (this.t >= 1) {
-        if (this.toPad) {
-          this.state = 'sit'; this.pad = this.toPad;
-          [this.ox, this.oy] = freePadSpot(this.pad);
-          this.pad.pulse = 0.8; this.pad.pt = 0;
-          addRipple(this.pad.x, this.pad.y, this.pad.R * 1.15, 1.6, 0.4);
-        } else {
-          this.state = 'swim'; this.pad = null; this.kick = 0;
-          splash(this.x, this.y, 0.55);
-          const others = frogPads().filter(p => !frogs.some(f => f !== this && f.pad === p));
-          this.target = others.sort((a, b) => Math.hypot(a.x - this.x, a.y - this.y) - Math.hypot(b.x - this.x, b.y - this.y))[(Math.random() * Math.min(3, others.length)) | 0] || pads[0];
-        }
-      }
-    } else if (this.state === 'swim') {
-      const p = this.target, dx = p.x - this.x, dy = p.y - this.y, d = Math.hypot(dx, dy);
-      let da = Math.atan2(dy, dx) - this.face;
-      da = Math.atan2(Math.sin(da), Math.cos(da));
-      this.face += clamp(da, -dt * 1.2, dt * 1.2);
-      this.phase += dt * 3.2;
-      this.kick = Math.max(0, (this.kick || 0) - dt);
-      const v = (18 + 30 * Math.max(0, Math.sin(this.phase))) * Math.sqrt(SCALE) * (1 + this.kick * 2);
-      this.x += Math.cos(this.face) * v * dt; this.y += Math.sin(this.face) * v * dt;
-      if (d < p.R * 1.08) {
-        const [ox, oy] = freePadSpot(p);
-        const [tx, ty] = padPoint(p, ox, oy);
-        this.jumpTo(tx, ty, p, 0.45);
-      }
+      if (this.t >= 1) { this.state = 'swim'; this.kick = 0; splash(this.x, this.y, 0.55); this.pickTarget(); }
+      return;
     }
+    this.jumpT -= dt;
+    if (this.jumpT < 0) { this.jumpT = rand(80, 200); this.leaveToWater(); return; }
+    const dx = this.target.x - this.x, dy = this.target.y - this.y, d = Math.hypot(dx, dy);
+    let da = Math.atan2(dy, dx) - this.face;
+    da = Math.atan2(Math.sin(da), Math.cos(da));
+    this.face += clamp(da, -dt * 1.2, dt * 1.2);
+    this.phase += dt * 3.2; this.kick = Math.max(0, (this.kick || 0) - dt);
+    const v = (18 + 30 * Math.max(0, Math.sin(this.phase))) * Math.sqrt(SCALE) * (1 + this.kick * 2);
+    this.x += Math.cos(this.face) * v * dt; this.y += Math.sin(this.face) * v * dt;
+    if (d < 24) this.pickTarget();
   }
   drawShadow(g) {
     if (this.state !== 'jump') return;
@@ -341,10 +291,6 @@ class Frog {
     const skin = '#7fae44', dark = '#4e7a28';
     g.save();
     g.translate(this.x, this.y);
-    if (this.state === 'sit') {
-      g.fillStyle = 'rgba(20,50,26,0.3)';
-      g.beginPath(); g.ellipse(2, 3, s * 1.0, s * 0.8, this.face, 0, TAU); g.fill();
-    }
     g.rotate(this.face);
     g.scale(1 + h * 0.6, 1 + h * 0.6);
     // 后腿：蹲着时折在两侧；游泳和跳起时向后蹬直
@@ -404,7 +350,7 @@ class Frog {
 }
 function updateFrogs(dt) {
   const want = frogWant();
-  if (frogs.length < want && pads.length) frogs.push(new Frog());
+  if (frogs.length < want) frogs.push(new Frog());
   if (frogs.length > want) frogs.length = want;
   for (const f of frogs) f.update(dt);
 }
@@ -471,7 +417,7 @@ class Dragonfly {
         if (this.x < -60 || this.x > W + 60 || this.y < -60 || this.y > H + 60) this.dead = true;
       } else if (d < 5) {
         this.state = 'hover'; this.hoverT = rand(0.6, 2.4);
-        this.dips = !padAt(this.x, this.y, 1.1) && Math.random() < 0.5 ? 1 + ((Math.random() * 3) | 0) : 0;
+        this.dips = Math.random() < 0.5 ? 1 + ((Math.random() * 3) | 0) : 0;
         this.dipP = 0; this.dipped = false;
       }
     }

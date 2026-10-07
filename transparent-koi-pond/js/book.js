@@ -119,7 +119,7 @@ const MOMENTS = [
   { k: 'heart', name: '比心', hint: '点点你自己的那条', on: () => hearts.length > 0 },
   { k: 'shy', name: '缩头乌龟', hint: '碰一碰乌龟', on: () => turtles.some(t => t.hideT > 0) },
   { k: 'gaze', name: '乌龟回眸', hint: '在乌龟旁边停一停', on: () => turtles.some(t => Math.abs(t.look) > 0.3) },
-  { k: 'frog', name: '扑通', hint: '荷叶上蹲着谁？', on: () => frogs.some(f => f.state === 'swim') },
+  { k: 'frog', name: '扑通', hint: '水里游着谁？', on: () => frogs.some(f => f.state === 'swim') },
   { k: 'dragonfly', name: '蜻蜓点水', hint: '晴好的天气里留意水面', on: () => dragonflies.some(d => d.dipped) },
   { k: 'butterfly', name: '蝶栖荷上', hint: '晴天的白天', on: () => butterflies.some(b => b.state === 'rest') },
   { k: 'dusk', name: '黄昏', hint: '傍晚时分', on: () => ENV.dusk > 0.5 },

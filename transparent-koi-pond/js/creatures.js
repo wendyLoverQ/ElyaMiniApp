@@ -184,7 +184,7 @@ class Turtle {
   }
 }
 
-/* 蝴蝶：在水面上空飞，会停在荷叶和荷花上 */
+/* Codex / GPT / 模型 ID 无法确认: butterflies fly above the open water. */
 const BF_PALETTES = [
   { wing: '#f0a23a', inner: '#c96a1c', edge: '#2a1f16', spot: '#fff4e0' },
   { wing: '#f7f3e8', inner: '#e8e0cc', edge: '#4a4a48', spot: '#2a2a2a' },
@@ -214,57 +214,34 @@ class Butterfly {
     this.pickTarget();
   }
 
+  // Codex / GPT / 模型 ID 无法确认: butterflies fly between open-water targets without leaf landing sites.
   pickTarget() {
-    if (Math.random() < 0.4 && pads.length) {
-      const p = pads[(Math.random() * pads.length) | 0];
-      // 有荷花的叶子，停在花上
-      this.land = { pad: p, ox: p.flower ? p.R * 0.12 : rand(-0.4, 0.4) * p.R, oy: p.flower ? -p.R * 0.08 : rand(-0.4, 0.4) * p.R };
-    } else {
-      this.land = null;
-      this.tx = rand(W * 0.05, W * 0.95); this.ty = rand(H * 0.05, H * 0.95);
-    }
+    this.tx = rand(W * 0.1, W * 0.9); this.ty = rand(H * 0.1, H * 0.9);
   }
 
   leave() {
     if (this.leaving) return;
-    this.leaving = true; this.state = 'fly'; this.land = null;
+    this.leaving = true; this.state = 'fly';
     const a = Math.atan2(this.y - H / 2, this.x - W / 2);
     this.tx = W / 2 + Math.cos(a) * Math.hypot(W, H); this.ty = H / 2 + Math.sin(a) * Math.hypot(W, H);
   }
 
-  landPoint() {
-    const p = this.land.pad, c = Math.cos(p.rot), s = Math.sin(p.rot);
-    return [p.x + this.land.ox * c - this.land.oy * s, p.y + this.land.ox * s + this.land.oy * c];
-  }
-
   update(dt) {
     const near = pointer.inside && Math.hypot(pointer.x - this.x, pointer.y - this.y) < 90;
-    if (this.state === 'rest') {
-      this.restT -= dt;
-      this.flap += dt * 1.3;
-      this.h = Math.max(0, this.h - dt * 2);
-      [this.x, this.y] = this.landPoint();
-      if (this.restT < 0 || (near && pointer.speed > 200 && time - pointer.moved < 0.2)) { this.state = 'fly'; this.pickTarget(); }
-      return;
-    }
     this.flap += dt * 50;
     this.h = Math.min(1, this.h + dt * 1.5);
-    let tx = this.tx, ty = this.ty;
-    if (this.land) [tx, ty] = this.landPoint();
+    const tx = this.tx, ty = this.ty;
     const dx = tx - this.x, dy = ty - this.y, d = Math.hypot(dx, dy);
     let da = Math.atan2(dy, dx) + Math.sin(time * 3 + this.seed) * 0.6 * Math.min(1, d / 60) - this.a;
     da = Math.atan2(Math.sin(da), Math.cos(da));
     this.a += clamp(da * 3 * dt, -4 * dt, 4 * dt);
-    const sp = this.speed * (this.land ? clamp(d / 80, 0.3, 1) : 1);
+    const sp = this.speed;
     this.x += Math.cos(this.a) * sp * dt + ENV.wind * 12 * dt;
     this.y += Math.sin(this.a) * sp * dt;
-    if (near && pointer.speed > 600 && time - pointer.moved < 0.1) { this.land = null; this.tx = this.x - (pointer.x - this.x) * 3; this.ty = this.y - (pointer.y - this.y) * 3; }
+    if (near && pointer.speed > 600 && time - pointer.moved < 0.1) { this.tx = this.x - (pointer.x - this.x) * 3; this.ty = this.y - (pointer.y - this.y) * 3; }
     if (this.leaving) {
       if (this.x < -60 || this.x > W + 60 || this.y < -60 || this.y > H + 60) this.dead = true;
-    } else if (d < 8) {
-      if (this.land) { this.state = 'rest'; this.restT = rand(4, 12); }
-      else this.pickTarget();
-    }
+    } else if (d < 8) this.pickTarget();
   }
 
   wing(g, open) {
@@ -295,7 +272,7 @@ class Butterfly {
   }
 
   draw(g) {
-    const open = this.state === 'rest' ? 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(this.flap)) : 0.12 + 0.88 * Math.abs(Math.cos(this.flap));
+    const open = 0.12 + 0.88 * Math.abs(Math.cos(this.flap));
     const sc = 1 + this.h * 0.25;
     // 水面上的影子，飞得越高离得越远
     const off = this.h * 40 + 3;

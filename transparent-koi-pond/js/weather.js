@@ -98,13 +98,13 @@ function updateEnv(dt) {
   if (ENV.flashNext > 0) { ENV.flashNext -= dt; if (ENV.flashNext <= 0) ENV.flash = 0.8; }
   if (ENV.storm > 0.5 && Math.random() < dt * 0.06 * ENV.storm) { ENV.flash = 1; ENV.flashNext = rand(0.12, 0.3); }
 
-  // 雨点：先是一道短短的落痕，落到水面变成涟漪，落在荷叶上只溅起水花
+  // Codex / GPT / 模型 ID 无法确认: rain streaks land on the open water and form ripples.
   const rate = ENV.rain * 260 * (W * H / 2e6);
   let n = rate * dt;
   while (n > 0) {
     if (Math.random() < n) {
       const x = rand(0, W), y = rand(0, H);
-      drops.push({ x, y, age: -0.12, life: rand(0.6, 1.0), r: rand(6, 15) * Math.sqrt(SCALE), pad: !!padAt(x, y, 0.9) });
+      drops.push({ x, y, age: -0.12, life: rand(0.6, 1.0), r: rand(6, 15) * Math.sqrt(SCALE), pad: false });
     }
     n -= 1;
   }

@@ -57,7 +57,7 @@ function updateEgret(dt) {
     if (Math.hypot(f.x - b.x, f.y - b.y) < r) { f.startle(b.x, b.y, rand(0.9, 1.6)); b.scared.add(f); }
   }
   for (const t of turtles) if (!b.scared.has(t) && Math.hypot(t.x - b.x, t.y - b.y) < r) { t.poke(); b.scared.add(t); }
-  for (const fr of frogs) if (!b.scared.has(fr) && fr.state === 'sit' && Math.hypot(fr.x - b.x, fr.y - b.y) < r * 0.8) { fr.leaveToWater(); b.scared.add(fr); }
+  for (const fr of frogs) if (!b.scared.has(fr) && fr.state === 'swim' && Math.hypot(fr.x - b.x, fr.y - b.y) < r * 0.8) { fr.leaveToWater(); b.scared.add(fr); }
   if (!b.noted && b.t > 0.4) { b.noted = true; bookMoment('egret'); }
   if (b.feather > 0 && before < b.feather && b.t >= b.feather) dropFeather(b.x, b.y, Math.cos(b.a), Math.sin(b.a));
   if (b.t >= 1) EGRET.b = null;

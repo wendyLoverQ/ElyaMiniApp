@@ -56,7 +56,6 @@ function buildStars() {
   LIGHT.stars = [];
   for (let i = 0; i < n; i++) {
     const x = lerp(16, W - 16, R()), y = lerp(16, H - 16, R());
-    if (padAt(x, y, 1.05)) continue;
     const big = R() < 0.08;
     LIGHT.stars.push({ x, y, r: big ? 1.5 + R() : 0.6 + R() * 0.7, ph: R() * TAU, rate: 0.6 + R() * 2.2 });
   }

@@ -76,8 +76,8 @@ const EN = {
   '夏': 'Summer',
   '秋': 'Autumn',
   '冬': 'Winter',
-  '影子跟着太阳走，早晚长、正午短。春天岸边的树会落花，夏天荷花开，秋天结莲蓬、落叶，冬天是残荷，最冷的日子池边结冰。夜里看得到星星和当天真实的月相。南半球的城市，季节会自动反过来。':
-    'Shadows follow the sun — long in the morning and evening, short at noon. In spring the tree by the shore sheds blossoms, summer brings lotus flowers, autumn seed pods and falling leaves, winter withered lotus and ice on the coldest days. At night you\'ll see stars and the real phase of the moon. Seasons flip automatically for southern-hemisphere cities.',
+  '影子跟着太阳走，早晚长、正午短。漂浮花瓣和落叶随季节变化。夜里看得到星星和当天真实的月相。南半球的城市，季节会自动反过来。':
+    'Shadows follow the sun — long in the morning and evening, short at noon. Floating petals and fallen leaves change with the seasons. At night you\'ll see stars and the real phase of the moon. Seasons flip automatically for southern-hemisphere cities.',
 
   '成长': 'Growth',
   '体长': 'Length',
@@ -172,7 +172,7 @@ const EN = {
   '乌龟回眸': 'A turtle looks back',
   '在乌龟旁边停一停': 'Rest the cursor next to a turtle',
   '扑通': 'Plop!',
-  '荷叶上蹲着谁？': 'Who\'s sitting on the lily pad?',
+  '水里游着谁？': 'Who\'s swimming in the water?',
   '蜻蜓点水': 'Dragonfly dip',
   '晴好的天气里留意水面': 'Watch the surface on a fine day',
   '蝶栖荷上': 'Butterfly at rest',

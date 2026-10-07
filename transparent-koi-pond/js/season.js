@@ -134,7 +134,7 @@ function updateFalling(dt) {
     if (f.h <= 0) {
       f.dead = true;
       addRipple(f.x, f.y, 10 + 8 * SCALE, 1.2, 0.45);
-      if (!padAt(f.x, f.y)) sndPlip(f.x, 0.25, 900, 0);
+      sndPlip(f.x, 0.25, 900, 0);
       petals.push({ x: f.x, y: f.y, a: f.a, va: f.va * 0.1, vx: f.vx * 0.3, vy: f.vy * 0.3, s: f.s, k: f.k, life: rand(80, 140) });
       noteFall();
     }
@@ -232,7 +232,6 @@ function applySeason() {
   SEASON.cur = season();
   iceCanvas = null;
   falling = [];
-  buildPads();
   buildPetals();
   buildCanopy();
   buildStars();

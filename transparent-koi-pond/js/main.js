@@ -50,7 +50,6 @@ cvs.addEventListener('pointerdown', e => {
 
   // 天上飞的先判定
   for (const d of dragonflies) if (d.hit(x, y)) { d.scare(x, y); return; }
-  for (const b of butterflies) if (b.state === 'rest' && Math.hypot(b.x - x, b.y - y) < b.s * 1.2) { b.state = 'fly'; b.pickTarget(); return; }
   // 水面上的
   const l = lanternAt(x, y);
   if (l) { pokeLantern(l); return; }
@@ -65,18 +64,6 @@ cvs.addEventListener('pointerdown', e => {
   }
   // 点到乌龟：缩进壳里
   for (const t of turtles) if (t.hit(x, y)) { t.poke(); return; }
-  // 点在荷叶上：荷叶晃一下，停在上面的蝴蝶飞走
-  const pad = padAt(x, y);
-  if (pad) {
-    const dx = pad.x - x, dy = pad.y - y, d = Math.hypot(dx, dy) || 1;
-    const f = 70 / Math.sqrt(pad.R / 60);
-    pad.vx += dx / d * f; pad.vy += dy / d * f;
-    pad.pulse = 1; pad.pt = 0;
-    addRipple(x, y, pad.R * 1.2, 2.2, 0.8);
-    for (const b of butterflies) if (b.state === 'rest' && b.land && b.land.pad === pad) { b.state = 'fly'; b.pickTarget(); }
-    for (const fr of frogs) if (fr.state === 'sit' && fr.pad === pad && Math.random() < 0.5) fr.leaveToWater();
-    return;
-  }
   for (const p of petals) {
     const dx = p.x - x, dy = p.y - y, d = Math.hypot(dx, dy);
     if (d < 140 && d > 0) { p.vx += dx / d * 30 * (1 - d / 140); p.vy += dy / d * 30 * (1 - d / 140); p.va += rand(-0.6, 0.6); }
@@ -99,7 +86,6 @@ function update(dt) {
   updateFood(dt);
   for (const r of ripples) r.age += dt;
   ripples = ripples.filter(r => r.age < r.life);
-  updatePads(dt);
   updatePetals(dt);
   updateButterflies(dt);
   updateFireflies(dt);
@@ -128,8 +114,6 @@ function draw() {
   drawFood(g);
   drawRipples(g);
   drawBubbles(g);
-  drawPads(g);
-  for (const f of frogs) if (f.state === 'sit') f.draw(g);
   drawPetals(g);
   drawFloatingFeathers(g);
   drawDrops(g);

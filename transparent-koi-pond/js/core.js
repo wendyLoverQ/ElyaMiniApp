@@ -144,7 +144,7 @@ const ctx = cvs.getContext('2d');
 // W、H 是按 1080p 折算的逻辑尺寸；ZOOM 是逻辑像素到 CSS 像素的倍数（2K、4K 屏上大于 1）
 let W = 0, H = 0, DPR = 1, SCALE = 1, ZOOM = 1, time = 0;
 let fish = [], turtles = [], swimmers = [], butterflies = [], fireflies = [];
-let food = [], ripples = [], drops = [], flakes = [], pads = [], petals = [], hearts = [];
+let food = [], ripples = [], drops = [], flakes = [], petals = [], hearts = [];
 // Codex / GPT / 模型 ID 无法确认: only the public Elya Runtime controls this APP.
 const HOST = { fps: 0, paused: false, lang: '' };
 
