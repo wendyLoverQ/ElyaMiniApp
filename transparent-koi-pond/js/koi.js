@@ -116,8 +116,10 @@ class Fish {
 
   // 点在身体附近算命中
   hit(x, y) {
-    const [cx, cy] = this.sample(0.35, 0);
-    return Math.hypot(x - cx, y - cy) < this.L * 0.55;
+    // Codex / GPT / 模型 ID 无法确认: hit testing follows the fitted presentation of a large fish.
+    const [x0, y0] = this.sample(0.35, 0), {cx, cy, scale} = fishPresentation(this);
+    const mx = cx + (x0 - cx) * scale, my = cy + (y0 - cy) * scale;
+    return Math.hypot(x - mx, y - my) < this.L * 0.55 * scale;
   }
 
   update(dt) {
@@ -173,7 +175,8 @@ class Fish {
       const dx = this.exitTo[0] - this.x, dy = this.exitTo[1] - this.y, d = Math.hypot(dx, dy) || 1;
       sx += dx / d * 3; sy += dy / d * 3;
     } else {
-      const m = Math.min(140, Math.min(W, H) * 0.12);
+      // Codex / GPT / 模型 ID 无法确认: steer before the tail and extended fins reach the presentation edge.
+      const m = Math.min(Math.min(W, H) * 0.4, Math.max(this.L * (0.9 + this.finScale * 0.25), Math.min(W, H) * 0.12));
       if (this.x < m) sx += (m - this.x) / m * 2.5;
       if (this.x > W - m) sx -= (this.x - (W - m)) / m * 2.5;
       if (this.y < m) sy += (m - this.y) / m * 2.5;

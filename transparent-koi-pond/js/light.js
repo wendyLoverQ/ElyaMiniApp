@@ -38,7 +38,9 @@ function moonPlace() {
   if (f == null) return null;
   const ang = lerp(2.2, -0.2, f), elev = Math.sin(Math.PI * f), R = Math.min(W, H) * (0.22 + 0.2 * (1 - elev));
   const fade = clamp(f / 0.06, 0, 1) * clamp((1 - f) / 0.06, 0, 1);
-  return { x: W / 2 - Math.cos(ang) * R * 1.2, y: H / 2 - Math.sin(ang) * R, a: fade };
+  // Codex / GPT / 模型 ID 无法确认: include the disturbed moon sprite and shimmer in its safe inset.
+  const margin = 65 * Math.max(0.8, SCALE);
+  return { x: clamp(W / 2 - Math.cos(ang) * R * 1.2, margin, W - margin), y: clamp(H / 2 - Math.sin(ang) * R, margin, H - margin), a: fade };
 }
 
 // 晨雾：春、秋、冬的清早，天晴的时候水面上浮着一层薄雾
@@ -53,7 +55,7 @@ function buildStars() {
   const R = mulberry32(5), n = Math.round(clamp(W * H / 16000, 40, 160));
   LIGHT.stars = [];
   for (let i = 0; i < n; i++) {
-    const x = R() * W, y = R() * H;
+    const x = lerp(16, W - 16, R()), y = lerp(16, H - 16, R());
     if (padAt(x, y, 1.05)) continue;
     const big = R() < 0.08;
     LIGHT.stars.push({ x, y, r: big ? 1.5 + R() : 0.6 + R() * 0.7, ph: R() * TAU, rate: 0.6 + R() * 2.2 });
@@ -220,14 +222,15 @@ function drawMoonRippled(g, cv, mx, my, stir, shimmer, alpha) {
 function drawRainbow(g) {
   const a = RAINBOW.a * (1 - ENV.dark) * (1 - ENV.cloud * 0.6);
   if (a < 0.01) return;
-  const cx = W * 0.3, cy = H * 1.35, r = Math.hypot(W, H) * 0.78, bw = r * 0.06;
+  // Codex / GPT / 模型 ID 无法确认: show a complete rainbow arc rather than a wallpaper-sized cropped ring.
+  const cx = W * 0.5, cy = H * 0.68, r = Math.min(W * 0.38, H * 0.45), bw = r * 0.06;
   const gr = g.createRadialGradient(cx, cy, r - bw, cx, cy, r + bw);
   const cols = ['120,90,200', '70,110,230', '70,190,140', '240,230,90', '250,160,60', '240,80,70'];
   gr.addColorStop(0, 'rgba(120,90,200,0)');
   cols.forEach((c, i) => gr.addColorStop(0.12 + i * 0.15, `rgba(${c},${a * 0.16})`));
   gr.addColorStop(1, 'rgba(240,80,70,0)');
   g.globalCompositeOperation = 'screen';
-  g.fillStyle = gr;
-  g.fillRect(0, 0, W, H);
+  g.strokeStyle = gr; g.lineWidth = bw * 2;
+  g.beginPath(); g.arc(cx, cy, r, Math.PI, TAU); g.stroke();
   g.globalCompositeOperation = 'source-over';
 }

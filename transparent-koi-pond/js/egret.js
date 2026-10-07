@@ -69,6 +69,8 @@ let egretCv = null;
 function drawEgret(g) {
   const b = EGRET.b;
   if (!b) return;
+  const opacity = frameOpacity(frameCircle(b.x, b.y, b.span * 0.575 + 15 * SCALE, 26 * SCALE));
+  if (!opacity) return;
   const s = b.span, size = Math.ceil(s * 1.15);
   if (!egretCv || egretCv.width !== size) egretCv = mkCanvas(size, size);
   const e = egretCv.getContext('2d');
@@ -99,7 +101,7 @@ function drawEgret(g) {
   // 影子落在鸟的斜下方，边缘是虚的
   const off = 26 * SCALE;
   g.save();
-  g.globalAlpha = 0.26 * (1 - ENV.cloud * 0.5);
+  g.globalAlpha = opacity * 0.26 * (1 - ENV.cloud * 0.5);
   g.filter = `blur(${Math.round(5 * SCALE)}px)`;
   g.drawImage(egretCv, b.x + off * SUN.x - size / 2, b.y + off * SUN.y - size / 2);
   g.restore();
@@ -145,7 +147,7 @@ function pushFeathers(x, y, reach, power) {
 }
 function drawFeather(g, f) {
   const s = f.s * (1 + f.h * 0.9);
-  const alpha = f.landed ? Math.min(1, (100 - f.age) / 6) : 1;
+  const alpha = (f.landed ? Math.min(1, (100 - f.age) / 6) : 1) * frameOpacity(frameCircle(f.x, f.y, s * 1.4 + 8, 3 + f.h * 60 * SCALE));
   g.save();
   g.globalAlpha = alpha;
   // 影子：飘得越高，离得越远
@@ -194,11 +196,14 @@ function drawSparkles(g) {
   for (const p of sparkles) {
     const k = 1 - p.age / p.life, tw = 0.6 + 0.4 * Math.sin(time * 14 + p.ph);
     const r = p.r * (0.6 + k * 0.6);
+    // Codex / GPT / 模型 ID 无法确认: keep the glow and cross-shaped sparkle complete during departure.
+    g.globalAlpha = frameOpacity(frameCircle(p.x, p.y, r * 2.4 + 2));
     g.fillStyle = `rgba(255,214,120,${0.35 * k})`;
     g.beginPath(); g.arc(p.x, p.y, r * 2.4, 0, TAU); g.fill();
     g.strokeStyle = `rgba(255,244,210,${0.9 * k * tw})`; g.lineWidth = 1.2;
     g.beginPath(); g.moveTo(p.x - r * 1.6, p.y); g.lineTo(p.x + r * 1.6, p.y); g.moveTo(p.x, p.y - r * 1.6); g.lineTo(p.x, p.y + r * 1.6); g.stroke();
   }
+  g.globalAlpha = 1;
   g.globalCompositeOperation = 'source-over';
 }
 

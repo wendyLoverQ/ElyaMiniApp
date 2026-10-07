@@ -87,7 +87,8 @@ function drawMineMarker(g) {
 function drawFishRing(g, f, label, alpha) {
   const [cx, cy] = f.sample(0.35, 0);
   const r = f.L * 0.62 + 8 + Math.sin(time * 2.4) * 2;
-  g.globalAlpha = alpha;
+  // Codex / GPT / 模型 ID 无法确认: selection rings fade before the edge; labels stay fully readable inside the viewport.
+  g.globalAlpha = alpha * frameOpacity(frameCircle(cx, cy, r + 2));
   g.strokeStyle = 'rgba(16,40,34,0.35)'; g.lineWidth = 4;
   g.beginPath(); g.arc(cx, cy, r, 0, TAU); g.stroke();
   g.strokeStyle = 'rgba(250,252,246,0.92)'; g.lineWidth = 2;
@@ -95,10 +96,13 @@ function drawFishRing(g, f, label, alpha) {
   if (label) {
     g.font = '600 16px "Noto Serif SC", "Songti SC", "STSong", serif';
     g.textAlign = 'center'; g.textBaseline = 'bottom';
+    const width = Math.min(g.measureText(label).width, W - FRAME_GAP * 2 - 2);
+    const x = clamp(cx, FRAME_GAP + width / 2, W - FRAME_GAP - width / 2 - 1);
+    const y = clamp(cy - r - 8, FRAME_GAP + 20, H - FRAME_GAP - 1);
     g.fillStyle = 'rgba(16,40,34,0.5)';
-    g.fillText(label, cx + 1, cy - r - 7);
+    g.fillText(label, x + 1, y + 1, W - FRAME_GAP * 2 - 2);
     g.fillStyle = '#fbfdf8';
-    g.fillText(label, cx, cy - r - 8);
+    g.fillText(label, x, y, W - FRAME_GAP * 2 - 2);
   }
   g.globalAlpha = 1;
 }

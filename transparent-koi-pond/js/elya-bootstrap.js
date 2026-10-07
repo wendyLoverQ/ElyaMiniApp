@@ -46,7 +46,7 @@
       if (!restored || typeof restored !== 'object' || Array.isArray(restored)) throw Error('KOI_INVALID_SNAPSHOT');
       state = restored;
     }
-    const scripts = ['core','lang-en','i18n','koi','scenery','creatures','weather','surprises','light','season','egret','mykoi','book','sound','painter','picker','panel','elya-runtime','main'];
+    const scripts = ['core','lang-en','i18n','koi','scenery','creatures','weather','surprises','light','season','egret','mykoi','book','sound','painter','picker','panel','elya-runtime','framing','main'];
     for (const name of scripts) await new Promise((resolve, reject) => {
       const script = document.createElement('script'); script.src = 'js/' + name + '.js';
       script.onload = resolve; script.onerror = () => reject(Error('KOI_SCRIPT_LOAD_FAILED: ' + name));

@@ -110,17 +110,19 @@ function update(dt) {
   updateLight(dt);
   updateSeason(dt);
   updateSound(dt);
+  containPondSubjects();
 }
 
 function draw() {
+  containPondSubjects();
   const g = ctx;
   g.setTransform(DPR, 0, 0, DPR, 0, 0);
   g.globalCompositeOperation = 'source-over';
   g.globalAlpha = 1;
   g.clearRect(0, 0, W, H);
 
-  for (const s of swimmers) if (!s.leap) s.drawShadow(g);
-  for (const s of swimmers) if (!s.leap) s.draw(g);
+  for (const s of swimmers) if (!s.leap) drawSwimmer(g, s, true);
+  for (const s of swimmers) if (!s.leap) drawSwimmer(g, s, false);
   for (const f of frogs) if (f.state === 'swim') f.draw(g);
 
   drawFood(g);
@@ -133,11 +135,11 @@ function draw() {
   drawDrops(g);
   drawFlakes(g);
   drawFalling(g);
-  for (const b of butterflies) b.draw(g);
-  for (const d of dragonflies) d.draw(g);
+  for (const b of butterflies) drawFramed(g, frameCircle(b.x, b.y, b.s * 1.8 + 2, b.h * 40 + 3), () => b.draw(g));
+  for (const d of dragonflies) drawFramed(g, frameCircle(d.x, d.y, d.s * 1.5 + 2, d.h * 46 + 4), () => d.draw(g));
   drawFallingFeathers(g);
   // 腾空的：跃起的锦鲤、起跳的青蛙
-  for (const s of swimmers) if (s.leap) { s.drawShadow(g); s.draw(g); }
+  for (const s of swimmers) if (s.leap) { drawSwimmer(g, s, true); drawSwimmer(g, s, false); }
   for (const f of frogs) if (f.state === 'jump') { f.drawShadow(g); f.draw(g); }
   drawDroplets(g);
 

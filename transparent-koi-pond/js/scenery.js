@@ -91,7 +91,7 @@ function drawPod(g, x, y, s, dead) {
 
 function renderPad(R, seed, flower, st) {
   const Rr = mulberry32(seed);
-  const S_ = R * 2 + R * 0.5 + 28;
+  const S_ = R * 3 + 28;
   const mkc = () => { const c = mkCanvas(S_ * DPR, S_ * DPR), g = c.getContext('2d'); g.scale(DPR, DPR); g.translate(S_ / 2, S_ / 2); return [c, g]; };
   const [c, g] = mkc();
 
@@ -172,7 +172,9 @@ function buildPads() {
     if (st.drop && st.drop.includes(i)) return;
     const R = p[2] * u * st.size;
     const { c, sh, S: size } = renderPad(R, i * 97 + 13, !!p[3], st);
-    pads.push({ bx: p[0] * W, by: p[1] * H, R, img: c, sh, S: size, ox: 0, oy: 0, vx: 0, vy: 0, rot0: i * 1.9, seed: i * 1.7, pulse: 0, pt: 0, flower: !!p[3], x: 0, y: 0, rot: 0 });
+    // Codex / GPT / 模型 ID 无法确认: normalized anchors refer to the usable inner frame, including rotation, pulse and shadows.
+    const margin = size * Math.SQRT1_2 * 1.035 + 12 * Math.max(0.8, SCALE) * 1.7 + FRAME_GAP;
+    pads.push({ bx: lerp(margin, W - margin, p[0]), by: lerp(margin, H - margin, p[1]), margin, R, img: c, sh, S: size, ox: 0, oy: 0, vx: 0, vy: 0, rot0: i * 1.9, seed: i * 1.7, pulse: 0, pt: 0, flower: !!p[3], x: 0, y: 0, rot: 0 });
   });
   updatePadPose();
 }
@@ -183,6 +185,8 @@ function updatePadPose() {
     p.x = p.bx + p.ox + Math.sin(time * 0.15 * wob + p.seed) * 3 * wob;
     p.y = p.by + p.oy + Math.cos(time * 0.12 * wob + p.seed * 1.3) * 3 * wob;
     p.rot = p.rot0 + Math.sin(time * 0.08 * wob + p.seed) * 0.05 * wob + p.ox * 0.002;
+    p.x = clamp(p.x, p.margin, W - p.margin);
+    p.y = clamp(p.y, p.margin, H - p.margin);
   }
 }
 
@@ -330,7 +334,8 @@ function drawPetals(g) {
   for (const p of petals) {
     const img = petalSprites[p.k], ps = img.width / DPR;
     g.save();
-    if (p.life != null) g.globalAlpha = clamp(p.life / 6, 0, 1);
+    // Codex / GPT / 模型 ID 无法确认: drifting petals fade while their complete rotated sprite still fits.
+    g.globalAlpha = (p.life != null ? clamp(p.life / 6, 0, 1) : 1) * frameOpacity(frameCircle(p.x, p.y, ps * p.s * Math.SQRT1_2));
     g.translate(p.x, p.y); g.rotate(p.a); g.scale(p.s, p.s);
     g.drawImage(img, -ps / 2, -ps / 2, ps, ps);
     g.restore();
@@ -342,7 +347,8 @@ function drawRipples(g) {
   for (const r of ripples) {
     const k = r.age / r.life;
     const rr = r.maxR * (1 - Math.pow(1 - k, 3));
-    const a = Math.pow(1 - k, 1.5) * r.strength;
+    // Codex / GPT / 模型 ID 无法确认: let expanding waves disappear before the full ring reaches the edge.
+    const a = Math.pow(1 - k, 1.5) * r.strength * frameOpacity(frameCircle(r.x, r.y, rr + 4));
     g.lineWidth = 2.5;
     g.strokeStyle = `rgba(18,50,40,${a * 0.22})`;
     g.beginPath(); g.arc(r.x, r.y, rr + 2, 0, TAU); g.stroke();

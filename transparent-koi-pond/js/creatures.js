@@ -385,7 +385,8 @@ function drawHearts(g) {
   for (const h of hearts) {
     if (h.age < 0) continue;
     const k = h.age / h.life, s = h.s * (0.6 + 0.4 * Math.min(1, k * 4));
-    g.globalAlpha = 1 - k;
+    // Codex / GPT / 模型 ID 无法确认: rising hearts disappear while their full outline remains visible.
+    g.globalAlpha = (1 - k) * frameOpacity(frameCircle(h.x, h.y, s * 1.1));
     g.fillStyle = '#f07a98';
     g.beginPath();
     g.moveTo(h.x, h.y + s * 0.35);

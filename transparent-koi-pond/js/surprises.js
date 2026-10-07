@@ -178,7 +178,7 @@ function pokeLantern(l) { l.va += rand(-2, 2); l.pulse = 1; l.vx += 10; addRippl
 function drawLanterns(g) {
   if (!lanterns.length) return;
   for (const l of lanterns) {
-    const a = clamp(l.life, 0, 1), fl = 0.85 + 0.15 * Math.sin(time * 9 + l.seed) * Math.sin(time * 5.3 + l.seed);
+    const a = clamp(l.life, 0, 1) * frameOpacity(frameCircle(l.x, l.y, l.s * 5.4 + 6)), fl = 0.85 + 0.15 * Math.sin(time * 9 + l.seed) * Math.sin(time * 5.3 + l.seed);
     const s = l.s * (1 + l.pulse * 0.08 * Math.sin(time * 14));
     // 水面上的一圈暖光
     g.globalCompositeOperation = 'lighter';
