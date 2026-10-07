@@ -1,0 +1,72 @@
+{
+  "type": "web-pet",
+  "title": "透明锦鲤池 · Koi Pond",
+  "entry": "index.html",
+  "width": 960,
+  "height": 640,
+  "preview": "preview.png",
+  "storageScope": "instance",
+  "permissions": [
+    "networkAccess"
+  ],
+  "network": {
+    "origins": [
+      "https://api.open-meteo.com",
+      "https://geocoding-api.open-meteo.com"
+    ]
+  },
+  "presentation": {
+    "viewport": {
+      "preferredWidth": 960,
+      "preferredHeight": 640,
+      "minWidth": 480,
+      "minHeight": 360,
+      "maxWidth": 3840,
+      "maxHeight": 2160,
+      "resize": "both",
+      "aspectRatio": "free"
+    },
+    "visualScale": {
+      "owner": "host",
+      "default": 1,
+      "min": 0.5,
+      "max": 2,
+      "gestures": [
+        "scale-wheel"
+      ]
+    }
+  },
+  "operationGuide": [
+    {
+      "zh-CN": "点击普通锦鲤撒食；点击喂食按钮在池中撒食。",
+      "zh-TW": "點擊一般錦鯉撒食；點擊餵食按鈕在池中撒食。",
+      "en": "Click a regular koi to scatter food, or use the feed button.",
+      "es": "Haz clic en una carpa o en el botón de comida para alimentarlas.",
+      "ja": "普通の錦鯉をクリック、または餌ボタンで餌をまきます。",
+      "ko": "일반 잉어를 클릭하거나 먹이 버튼으로 먹이를 주세요.",
+      "ru": "Нажмите на обычного карпа или кнопку кормления.",
+      "de": "Zum Füttern auf einen normalen Koi oder die Futtertaste klicken.",
+      "fr": "Cliquez sur un koi ordinaire ou sur le bouton de nourriture."
+    },
+    {
+      "zh-CN": "点击自己的锦鲤冒爱心；点击乌龟缩壳，点击荷叶晃动。",
+      "en": "Your koi shows hearts; turtles retract and lily pads sway when clicked."
+    },
+    {
+      "zh-CN": "从普通锦鲤处长按吸引鱼群，拖动划出涟漪。",
+      "en": "Hold on a regular koi to attract fish; drag to stir ripples."
+    },
+    {
+      "zh-CN": "拖动右上角荷花图标移动整个 Mini APP；透明空白区域点击穿透。",
+      "en": "Drag the flower handle to move the APP. Empty transparent areas pass clicks through."
+    },
+    {
+      "zh-CN": "设置按钮可调整鱼群、天气、昼夜、季节、声音，查看图鉴和绘制自己的锦鲤。",
+      "en": "Open settings for fish, weather, seasons, sound, the collection, and painting your koi."
+    },
+    {
+      "zh-CN": "实时天气需要在 Elya 资源详情允许联网；默认手动晴天，无需联网。",
+      "en": "Live weather requires network permission in Elya resource details. Manual sunny weather works offline by default."
+    }
+  ]
+}

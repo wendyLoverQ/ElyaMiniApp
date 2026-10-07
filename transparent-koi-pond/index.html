@@ -1,0 +1,489 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>锦鲤池</title>
+<style>
+  :root {
+    --water: #4e7f70;
+    --ink: #f3faf2;
+    --ink-soft: rgba(243, 250, 242, 0.72);
+    --ink-faint: rgba(243, 250, 242, 0.5);
+    --glass: rgba(226, 242, 230, 0.14);
+    --glass-edge: rgba(236, 248, 238, 0.30);
+    --panel: rgba(20, 44, 39, 0.76);
+    --line: rgba(230, 245, 235, 0.14);
+    --field: rgba(230, 245, 235, 0.08);
+    --field-edge: rgba(230, 245, 235, 0.22);
+    --lotus: #f2a3ba;
+    --lotus-ink: #3d1424;
+    --serif: "Noto Serif SC", "Source Han Serif SC", "Noto Serif CJK SC", "Songti SC", "STSong", "SimSun", serif;
+    --sans: "PingFang SC", "Microsoft YaHei", "Noto Sans SC", system-ui, sans-serif;
+    color-scheme: dark;
+    /* 屏幕边上被任务栏占掉的宽度，由 js/main.js 的 fitScreen() 填 */
+    --edge-t: max(env(safe-area-inset-top, 0px), var(--bar-t, 0px));
+    --edge-r: max(env(safe-area-inset-right, 0px), var(--bar-r, 0px));
+    --edge-b: max(env(safe-area-inset-bottom, 0px), var(--bar-b, 0px));
+  }
+  /* 界面尺寸都用 rem；2K、4K 屏上 fitScreen() 会把根字号按屏幕放大 */
+  html { font-size: 16px; }
+  html, body { height: 100%; margin: 0; overflow: hidden; background: transparent; }
+  #pond { position: fixed; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; }
+  :focus-visible { outline: 2px solid var(--lotus); outline-offset: 2px; }
+  [hidden] { display: none !important; }
+
+  /* 右上角：节气、时间、天气，下面是设置按钮（右下角常被任务栏挡住，所以放在上面） */
+  .corner {
+    position: fixed;
+    top: calc(1.375rem + var(--edge-t));
+    right: calc(1.5rem + var(--edge-r));
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.75rem;
+    pointer-events: none;
+  }
+  .almanac {
+    min-width: 13.5rem;
+    padding: 1rem 1.25rem 0.9375rem;
+    border-radius: 1rem;
+    background: var(--glass);
+    border: 1px solid var(--glass-edge);
+    -webkit-backdrop-filter: blur(0.625rem) saturate(1.1);
+    backdrop-filter: blur(0.625rem) saturate(1.1);
+    color: var(--ink);
+    font-family: var(--serif);
+    text-shadow: 0 1px 2px rgba(16, 44, 36, 0.35);
+    pointer-events: none;
+    user-select: none;
+    display: grid;
+    gap: 2px;
+  }
+  .almanac .term { font-size: 0.875rem; letter-spacing: 0.32em; color: var(--ink-soft); }
+  .almanac .time { font-size: 3.25rem; font-weight: 700; line-height: 1.15; font-variant-numeric: tabular-nums; letter-spacing: 0.02em; }
+  .almanac .date { font-size: 1rem; letter-spacing: 0.06em; color: var(--ink-soft); }
+  .almanac .wx { margin-top: 0.375rem; font-size: 1.125rem; letter-spacing: 0.06em; color: var(--ink); }
+  .almanac .forecast { font-size: 0.9375rem; gap: 0.75rem; margin-top: 0.625rem; padding-top: 0.625rem; }
+  .forecast { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--line); font-size: 0.75rem; text-align: center; }
+  .forecast div { display: grid; gap: 2px; }
+  .forecast span { color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .forecast b { font-weight: 600; }
+
+  .hint {
+    position: fixed;
+    left: 50%;
+    /* 就算没测到任务栏，也抬到常见任务栏高度之上 */
+    bottom: max(5.5rem, calc(1.75rem + var(--edge-b)));
+    transform: translateX(-50%);
+    max-width: calc(100vw - 7.5rem);
+    padding: 0.5rem 1.25rem;
+    border-radius: 999px;
+    background: rgba(18, 48, 40, 0.30);
+    color: var(--ink);
+    font: 500 0.9375rem/1.5 var(--serif);
+    letter-spacing: 0.18em;
+    text-align: center;
+    pointer-events: none;
+    transition: opacity 1.4s ease;
+  }
+  .hint.gone { opacity: 0; }
+
+  /* 设置按钮 */
+  .gear {
+    position: relative;
+    pointer-events: auto;
+    width: 3rem; height: 3rem;
+    padding: 0;
+    border-radius: 50%;
+    display: grid; place-items: center;
+    background: var(--glass);
+    border: 1px solid var(--glass-edge);
+    -webkit-backdrop-filter: blur(0.625rem);
+    backdrop-filter: blur(0.625rem);
+    color: var(--ink);
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+  }
+  .gear svg { width: 1.375rem; height: 1.375rem; }
+  .gear:hover, .gear:focus-visible, .gear[aria-expanded="true"] { opacity: 1; }
+  .gear[aria-expanded="true"] { transform: rotate(90deg); }
+
+  /* 设置面板 */
+  .panel {
+    position: fixed;
+    top: calc(1rem + var(--edge-t));
+    right: calc(1rem + var(--edge-r));
+    bottom: max(4rem, calc(1rem + var(--edge-b)));
+    width: min(21.5rem, calc(100vw - 2rem));
+    display: flex;
+    flex-direction: column;
+    border-radius: 1.125rem;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    -webkit-backdrop-filter: blur(1.125rem) saturate(1.2);
+    backdrop-filter: blur(1.125rem) saturate(1.2);
+    box-shadow: 0 1.5rem 3.75rem rgba(8, 24, 20, 0.38);
+    color: var(--ink);
+    font: 0.875rem/1.5 var(--sans);
+    overflow: hidden;
+    transform: translateX(calc(100% + 1.5rem));
+    visibility: hidden;
+    transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1), visibility 0s linear 0.45s;
+  }
+  .panel.open { transform: none; visibility: visible; transition: transform 0.45s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .panel header { display: flex; align-items: center; justify-content: space-between; padding: 1rem 1rem 0.625rem 1.25rem; }
+  .panel h2 { margin: 0; font: 700 1.125rem/1.2 var(--serif); letter-spacing: 0.24em; }
+  .icon-btn { width: 2rem; height: 2rem; border-radius: 50%; border: 0; background: var(--field); color: var(--ink); font-size: 1.125rem; line-height: 1; cursor: pointer; }
+  .icon-btn:hover { background: var(--field-edge); }
+
+  .tabs { display: flex; gap: 0.25rem; padding: 0 1rem; border-bottom: 1px solid var(--line); }
+  .tabs button {
+    flex: 1; padding: 0.625rem 0 0.5625rem;
+    background: none; border: 0; border-bottom: 2px solid transparent;
+    color: var(--ink-soft); font: 500 0.875rem var(--serif); letter-spacing: 0.14em; cursor: pointer;
+  }
+  .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--lotus); }
+
+  .pane { flex: 1; overflow-y: auto; overflow-x: hidden; padding: 1rem 1.25rem 1.5rem; display: grid; gap: 0.875rem; align-content: start; }
+  .group-title { margin: 0.375rem 0 -4px; font: 600 0.75rem var(--serif); letter-spacing: 0.3em; color: var(--ink-faint); }
+  .row { display: grid; grid-template-columns: 3.25rem 1fr auto; align-items: center; gap: 0.75rem; font-size: 0.8125rem; }
+  .row.wide { grid-template-columns: 3.25rem 1fr; }
+  /* 英文的标签比中文长 */
+  html[lang="en"] .row { grid-template-columns: 4.75rem 1fr auto; }
+  html[lang="en"] .row.wide { grid-template-columns: 4.75rem 1fr; }
+  .lbl { color: var(--ink-soft); letter-spacing: 0.08em; }
+  .row output { min-width: 4.2em; text-align: right; font-size: 0.75rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  input[type="range"] { width: 100%; accent-color: var(--lotus); margin: 0; }
+
+  .seg { display: flex; flex-wrap: wrap; gap: 0.375rem; }
+  .seg button {
+    padding: 0.3125rem 0.75rem; border-radius: 999px;
+    border: 1px solid var(--field-edge); background: var(--field);
+    color: var(--ink); font: 0.8125rem var(--sans); cursor: pointer;
+  }
+  .seg button:hover { border-color: var(--ink-soft); }
+  .seg button[aria-pressed="true"] { background: var(--lotus); border-color: var(--lotus); color: var(--lotus-ink); font-weight: 600; }
+
+  .switch { position: relative; justify-self: start; width: 2.5rem; height: 1.375rem; }
+  .switch input { position: absolute; inset: 0; margin: 0; opacity: 0; cursor: pointer; }
+  .switch span { position: absolute; inset: 0; border-radius: 999px; background: var(--field-edge); transition: background 0.2s; pointer-events: none; }
+  .switch span::after { content: ""; position: absolute; top: 0.1875rem; left: 0.1875rem; width: 1rem; height: 1rem; border-radius: 50%; background: var(--ink); transition: transform 0.2s; }
+  .switch input:checked + span { background: var(--lotus); }
+  .switch input:checked + span::after { transform: translateX(1.125rem); background: #fff; }
+  .switch input:focus-visible + span { outline: 2px solid var(--lotus); outline-offset: 2px; }
+  .toggles { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.75rem 1rem; }
+  .toggles label { display: flex; align-items: center; justify-content: space-between; gap: 0.625rem; font-size: 0.8125rem; color: var(--ink-soft); }
+
+  .pick-btn, input[type="text"] {
+    width: 100%; box-sizing: border-box;
+    padding: 0.375rem 0.625rem; border-radius: 0.5rem;
+    border: 1px solid var(--field-edge); background: var(--field);
+    color: var(--ink); font: 0.8125rem var(--sans);
+  }
+  /* js/picker.js 的下拉框 */
+  .pick { position: relative; display: block; min-width: 0; }
+  .pick-btn { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; text-align: left; cursor: pointer; }
+  .pick-btn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pick-btn::after { content: ""; flex: none; width: 0.4rem; height: 0.4rem; margin: -0.2rem 0.125rem 0 0; border: solid var(--ink-soft); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+  .pick-btn:hover { border-color: var(--ink-soft); }
+  .pick-btn[aria-expanded="true"]::after { margin-top: 0.2rem; transform: rotate(-135deg); }
+  .pick-list {
+    position: absolute; left: 0; right: 0; top: calc(100% + 0.25rem); z-index: 5;
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(4rem, 1fr)); gap: 0.125rem;
+    max-height: 16rem; overflow-y: auto; padding: 0.25rem;
+    border-radius: 0.625rem; border: 1px solid var(--field-edge);
+    background: #1d3c35; box-shadow: 0 0.75rem 2rem rgba(8, 24, 20, 0.45);
+    outline: none;
+  }
+  .pick-list[hidden] { display: none; }
+  .drag-scroll.dragging { cursor: grabbing; user-select: none; }
+  .drag-scroll.dragging * { pointer-events: none; }
+  .pick.up .pick-list { top: auto; bottom: calc(100% + 0.25rem); }
+  .pick-opt { padding: 0.375rem 0.375rem; border-radius: 0.375rem; font-size: 0.8125rem; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: var(--ink-soft); cursor: pointer; }
+  .pick-opt:hover { background: var(--field); color: var(--ink); }
+  .pick-opt.active { background: var(--field-edge); color: var(--ink); }
+  .pick-opt[aria-selected="true"] { color: var(--lotus); font-weight: 600; }
+  .status { margin: 0; font-size: 0.75rem; line-height: 1.6; color: var(--ink-faint); }
+  .pane .forecast { margin-top: 0; padding: 0.625rem 0 0; }
+
+  .mine-card { display: grid; grid-template-columns: 8.25rem 1fr; gap: 0.875rem; align-items: center; padding: 0.75rem; border-radius: 0.75rem; background: linear-gradient(135deg, rgba(126, 169, 148, 0.35), rgba(46, 88, 76, 0.35)); border: 1px solid var(--line); }
+  .mine-card canvas { width: 8.25rem; height: 4rem; display: block; }
+  .mine-card .name { font: 700 1.375rem/1.2 var(--serif); letter-spacing: 0.1em; word-break: break-all; }
+  .mine-card .kind { font-size: 0.75rem; color: var(--ink-soft); letter-spacing: 0.1em; }
+  .grow { display: grid; gap: 0.375rem; font-size: 0.75rem; color: var(--ink-soft); }
+  .grow .bar { height: 0.375rem; border-radius: 999px; background: var(--field); overflow: hidden; }
+  .grow .bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #f7c9a0, var(--lotus)); border-radius: inherit; transition: width 0.6s ease; }
+  .stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0.625rem; margin: 0; }
+  .stats div { padding: 0.625rem 0.75rem; border-radius: 0.625rem; background: var(--field); }
+  .stats dt { font-size: 0.75rem; color: var(--ink-faint); letter-spacing: 0.1em; }
+  .stats dd { margin: 2px 0 0; font: 600 0.9375rem var(--serif); font-variant-numeric: tabular-nums; }
+  .actions { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .btn { padding: 0.5rem 0.875rem; border-radius: 0.625rem; border: 1px solid var(--lotus); background: var(--lotus); color: var(--lotus-ink); font: 600 0.8125rem var(--sans); cursor: pointer; }
+  .btn.ghost { background: transparent; color: var(--ink-soft); border-color: var(--field-edge); }
+  .btn.ghost.armed { color: #ffd6c9; border-color: #e88a6f; }
+  .var-row { display: flex; gap: 0.5rem; min-width: 0; }
+  .var-row .pick { flex: 1; }
+  .var-row .btn { flex: none; padding: 0.375rem 0.75rem; }
+  .painter { display: grid; gap: 0.625rem; padding: 0.75rem; border-radius: 0.75rem; background: var(--field); border: 1px solid var(--line); }
+  .painter canvas { width: 100%; height: 8.125rem; display: block; border-radius: 0.5rem; touch-action: none; cursor: crosshair;
+    background: radial-gradient(ellipse at 50% 45%, rgba(126, 169, 148, 0.5), rgba(46, 88, 76, 0.45)); }
+  .paint-row { display: grid; grid-template-columns: 2.5rem 1fr; align-items: center; gap: 0.625rem; font-size: 0.8125rem; }
+  .swatches { display: flex; flex-wrap: wrap; gap: 0.4375rem; }
+  .sw { width: 1.5rem; height: 1.5rem; padding: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.25); background: var(--c); cursor: pointer; }
+  .sw:hover { border-color: var(--ink-soft); }
+  .sw[aria-pressed="true"] { border-color: var(--lotus); box-shadow: 0 0 0 2px rgba(242, 163, 186, 0.35); }
+  .sw.eraser { background: linear-gradient(135deg, transparent 44%, #e88a6f 44%, #e88a6f 56%, transparent 56%), var(--field); }
+  #paint-count:empty { display: none; }
+  .note { margin: 0; font-size: 0.75rem; line-height: 1.6; color: var(--ink-faint); }
+  /* 只在壁纸程序里显示：桌面上收不到键盘输入 */
+  .host-only { display: none; }
+  html.in-host .host-only { display: block; }
+
+  /* 图鉴 */
+  .group-title .count { margin-left: 0.375rem; letter-spacing: 0.06em; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .recs { display: grid; gap: 0.375rem; }
+  .rec {
+    display: grid; grid-template-columns: 4.875rem 1fr auto; align-items: center; gap: 0.625rem;
+    width: 100%; padding: 0.375rem 0.75rem 0.375rem 0.375rem; border-radius: 0.625rem;
+    border: 1px solid transparent; background: var(--field);
+    color: var(--ink); font: 0.8125rem var(--sans); text-align: left; cursor: pointer;
+  }
+  .rec:hover { border-color: var(--field-edge); }
+  .rec canvas { width: 4.875rem; height: 2.375rem; display: block; }
+  .rec-txt { display: grid; min-width: 0; line-height: 1.35; }
+  .rec-txt small { font-size: 0.6875rem; letter-spacing: 0.14em; color: var(--ink-faint); }
+  .rec-txt strong { font: 600 0.875rem var(--serif); letter-spacing: 0.06em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .rec-txt em { font-style: normal; font-size: 0.6875rem; color: var(--ink-soft); }
+  .rec-val { font: 600 0.875rem var(--serif); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .vgrid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.375rem; }
+  html[lang="en"] .vgrid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .vcard { display: grid; justify-items: center; gap: 1px; padding: 0.375rem 0.25rem 0.4375rem; border-radius: 0.625rem; background: var(--field); text-align: center; }
+  .vcard canvas { width: 100%; max-width: 4.375rem; height: 1.875rem; display: block; }
+  .vcard strong { font: 600 0.75rem/1.25 var(--serif); letter-spacing: 0.04em; overflow-wrap: anywhere; }
+  .vcard.locked strong { color: var(--ink-faint); }
+  .rar { font-size: 0.625rem; letter-spacing: 0.12em; color: var(--ink-faint); }
+  .rar.r1 { color: #b6dcc6; }
+  .rar.r2 { color: #a9cff2; }
+  .rar.r3 { color: #f5d27a; }
+  .mgrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.375rem; }
+  .moment { display: grid; gap: 1px; padding: 0.4375rem 0.625rem; border-radius: 0.625rem; background: var(--field); min-width: 0; }
+  .moment strong { font: 600 0.8125rem var(--serif); letter-spacing: 0.08em; }
+  .moment span { font-size: 0.6875rem; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+  .moment.locked { background: transparent; border: 1px dashed var(--field-edge); }
+  .moment.locked strong, .moment.locked span { color: var(--ink-faint); }
+
+  /* 发现新东西时的提示条 */
+  .toast {
+    position: fixed;
+    top: calc(1.375rem + var(--edge-t));
+    left: 50%;
+    max-width: calc(100vw - 2rem);
+    box-sizing: border-box;
+    display: flex; align-items: center; gap: 0.625rem;
+    padding: 0.4375rem 1rem 0.4375rem 0.5rem;
+    border-radius: 999px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    -webkit-backdrop-filter: blur(0.75rem);
+    backdrop-filter: blur(0.75rem);
+    color: var(--ink);
+    font: 500 0.8125rem/1.4 var(--serif);
+    letter-spacing: 0.1em;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, -10px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  .toast b { flex: none; padding: 2px 0.5625rem; border-radius: 999px; background: var(--lotus); color: var(--lotus-ink); font: 600 0.6875rem var(--sans); letter-spacing: 0.1em; }
+  .gear.fresh { opacity: 0.85; }
+  /* “鼠标靠近时”：平时藏起来，鼠标到附近才浮出来 */
+  .gear.peek { opacity: 0; }
+  .gear.peek.near, .gear.peek:focus-visible, .gear.peek[aria-expanded="true"] { opacity: 1; }
+  .gear.fresh::after { content: ""; position: absolute; top: 0.4375rem; right: 0.4375rem; width: 0.5rem; height: 0.5rem; border-radius: 50%; background: var(--lotus); }
+
+  @media (max-width: 600px) {
+    .corner { right: calc(1rem + var(--edge-r)); top: calc(1rem + var(--edge-t)); gap: 0.5rem; }
+    .almanac { min-width: 0; padding: 0.625rem 0.875rem; }
+    .almanac .time { font-size: 2.125rem; }
+    .almanac .wx { font-size: 1rem; }
+    .almanac .forecast { display: none; }
+    .mine-card { grid-template-columns: 1fr; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .panel, .panel.open, .gear, .hint, .toast { transition: none; }
+  }
+
+  /* Codex / GPT / 模型 ID 无法确认: transparent desktop overlay, visible controls only. */
+  .koi-tools { display: flex; gap: 0.5rem; pointer-events: none; }
+  .koi-tools .gear { opacity: 0.9; background: rgba(20,44,39,0.78); }
+  .koi-move { font-size: 1.75rem; cursor: move; color: var(--lotus); }
+  .almanac { background: rgba(20,44,39,0.72); }
+  #koi-runtime-error { position: fixed; left: 1rem; right: 1rem; bottom: 1rem; z-index: 100;
+    padding: 0.75rem 1rem; border-radius: 0.75rem; background: #542c30; color: #fff;
+    font: 14px/1.5 var(--sans); pointer-events: auto; }
+  @media (max-height: 500px) { .panel { bottom: 1rem; } }
+</style></head><body>
+
+<canvas id="pond"></canvas>
+
+<div class="corner">
+<div class="almanac" id="almanac">
+  <div class="term" id="term">秋分</div>
+  <div class="time" id="clock">--:--</div>
+  <div class="date" id="date"></div>
+  <div class="wx" id="wx"></div>
+  <div class="forecast" id="fc" hidden></div>
+</div>
+
+<div class="koi-tools">
+<button class="gear koi-move" id="move-handle" type="button" aria-label="拖动锦鲤池" data-en="Move koi pond">✿</button>
+<button class="gear" id="feed-koi" type="button" aria-label="喂食" data-en="Feed koi"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 8h14l-2 11H7L5 8Z M4 5h16"/><circle cx="10" cy="12" r=".8"/><circle cx="14" cy="15" r=".8"/></svg></button>
+<button class="gear" id="gear" type="button" aria-label="打开设置" aria-expanded="false" aria-controls="panel">
+  <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round">
+    <path d="M4 7h9M19 7h1M4 17h3M13 17h7"/><circle cx="16" cy="7" r="2.4"/><circle cx="10" cy="17" r="2.4"/>
+  </svg>
+</button>
+</div>
+</div>
+
+<div class="toast" id="toast" role="status" aria-live="polite"><b></b><span></span></div>
+
+<div class="hint" id="hint">点击锦鲤或喂食按钮撒食 · 拖动荷花图标移动</div>
+
+<aside class="panel" id="panel" aria-label="池畔设置" aria-hidden="true">
+  <header>
+    <h2>池畔设置</h2>
+    <button class="icon-btn" id="panel-close" type="button" aria-label="关闭设置">×</button>
+  </header>
+  <div class="tabs" role="tablist">
+    <button type="button" role="tab" id="tab-scene" data-tab="scene" aria-controls="pane-scene">景致</button>
+    <button type="button" role="tab" id="tab-weather" data-tab="weather" aria-controls="pane-weather">天气</button>
+    <button type="button" role="tab" id="tab-mine" data-tab="mine" aria-controls="pane-mine">我的锦鲤</button>
+    <button type="button" role="tab" id="tab-book" data-tab="book" aria-controls="pane-book">图鉴</button>
+  </div>
+
+  <section class="pane" role="tabpanel" id="pane-scene" data-pane="scene" aria-labelledby="tab-scene">
+    <div class="row wide"><span class="lbl">语言</span>
+      <div class="seg" data-key="lang"><button type="button" data-val="auto">自动</button><button type="button" data-val="zh" lang="zh-CN">中文</button><button type="button" data-val="en" lang="en">English</button></div>
+    </div>
+
+
+
+
+    <p class="group-title">池中</p>
+    <label class="row"><span class="lbl">锦鲤</span><input type="range" id="fishCount" data-key="fishCount" min="6" max="60"><output></output></label>
+    <label class="row"><span class="lbl">游速</span><input type="range" id="swimSpeed" data-key="swimSpeed" data-scale="100" data-fmt="pct" min="40" max="200"><output></output></label>
+    <label class="row"><span class="lbl">乌龟</span><input type="range" id="turtles" data-key="turtles" min="0" max="6"><output></output></label>
+    <div class="toggles">
+      <label>蝴蝶蜻蜓<span class="switch"><input type="checkbox" id="butterflies" data-key="butterflies"><span></span></span></label>
+      <label>青蛙<span class="switch"><input type="checkbox" id="frogs" data-key="frogs"><span></span></span></label>
+      <label>花叶<span class="switch"><input type="checkbox" id="petals" data-key="petals"><span></span></span></label>
+      <label>时钟<span class="switch"><input type="checkbox" id="showClock" data-key="showClock"><span></span></span></label>
+    </div>
+
+    <p class="group-title">声音</p>
+    <div class="toggles">
+      <label>环境音<span class="switch"><input type="checkbox" id="sound" data-key="sound"><span></span></span></label>
+    </div>
+    <label class="row"><span class="lbl">音量</span><input type="range" id="volume" data-key="volume" data-scale="100" data-fmt="pct" min="0" max="100"><output></output></label>
+    <p class="note">水声、雨声、雷声、蛙鸣、夜里的虫鸣，还有撒食、水花的声音，全部由程序实时合成。</p>
+
+    <p class="group-title">性能</p>
+    <div class="row wide"><span class="lbl">帧率</span>
+      <div class="seg" data-key="fpsCap" data-num><button type="button" data-val="0">自动</button><button type="button" data-val="30">30 省电</button><button type="button" data-val="60">60 流畅</button></div>
+    </div>
+    <div class="row wide"><span class="lbl">画质</span>
+      <div class="seg" data-key="quality"><button type="button" data-val="auto">自动</button><button type="button" data-val="high">高</button><button type="button" data-val="low">省电</button></div>
+    </div>
+    <p class="note">帧率选“自动”时，有动静就跑 60 帧，池子安静下来降到 30 帧。画质选“自动”时，电脑跟不上会自动把分辨率降一档。</p>
+  </section>
+
+  <section class="pane" role="tabpanel" id="pane-weather" data-pane="weather" aria-labelledby="tab-weather" hidden>
+    <p class="group-title">天气</p>
+    <div class="seg" data-key="weatherMode">
+      <button type="button" data-val="auto">实时</button><button type="button" data-val="clear">晴</button><button type="button" data-val="cloudy">多云</button><button type="button" data-val="rain">雨</button><button type="button" data-val="storm">雷雨</button><button type="button" data-val="snow">雪</button><button type="button" data-val="fog">雾</button>
+    </div>
+    <div class="row wide" id="city-row"><span class="lbl" id="city-lbl">城市</span><koi-select id="city" data-key="city" aria-labelledby="city-lbl"></koi-select></div>
+    <div class="row wide" id="city-find-row"><span class="lbl">搜索</span>
+      <form class="var-row" id="city-find"><input type="text" id="city-q" placeholder="输入城市名，比如 London" maxlength="60" autocomplete="off"><button type="submit" class="btn ghost">查找</button></form>
+
+    </div>
+    <p class="status" id="wx-status"></p>
+    <div class="forecast" id="wx-forecast" hidden></div>
+
+    <p class="group-title">时段</p>
+    <div class="seg" data-key="timeMode">
+      <button type="button" data-val="auto">跟随时间</button><button type="button" data-val="day">白天</button><button type="button" data-val="dusk">黄昏</button><button type="button" data-val="night">夜晚</button>
+    </div>
+
+    <p class="group-title">季节</p>
+    <div class="seg" data-key="seasonMode">
+      <button type="button" data-val="auto">跟随日期</button><button type="button" data-val="spring">春</button><button type="button" data-val="summer">夏</button><button type="button" data-val="autumn">秋</button><button type="button" data-val="winter">冬</button>
+    </div>
+    <p class="note">影子跟着太阳走，早晚长、正午短。春天岸边的树会落花，夏天荷花开，秋天结莲蓬、落叶，冬天是残荷，最冷的日子池边结冰。夜里看得到星星和当天真实的月相。南半球的城市，季节会自动反过来。</p>
+  </section>
+
+  <section class="pane" role="tabpanel" id="pane-mine" data-pane="mine" aria-labelledby="tab-mine" hidden>
+    <div class="mine-card">
+      <canvas id="mine-portrait" aria-hidden="true"></canvas>
+      <div><div class="name" id="mine-title"></div><div class="kind" id="mine-kind"></div></div>
+    </div>
+    <div class="grow">
+      <div style="display:flex;justify-content:space-between"><span>成长</span><span id="st-grow-label"></span></div>
+      <div class="bar"><i id="st-grow"></i></div>
+    </div>
+    <dl class="stats">
+      <div><dt>体长</dt><dd id="st-len"></dd></div>
+      <div><dt>吃过</dt><dd id="st-eat"></dd></div>
+      <div><dt>陪伴</dt><dd id="st-time"></dd></div>
+      <div><dt>领养于</dt><dd id="st-born"></dd></div>
+    </dl>
+    <div class="row wide"><span class="lbl" id="mine-name-lbl">名字</span>
+      <div class="var-row"><input type="text" id="mine-name" maxlength="16" autocomplete="off" aria-labelledby="mine-name-lbl"><button type="button" class="btn ghost" id="mine-name-roll">换一个</button></div>
+    </div>
+    <p class="note host-only">桌面上打不了字：点「换一个」随机挑名字，或者在壁纸软件的属性栏里填「我的锦鲤名字」。</p>
+    <div class="row wide"><span class="lbl" id="mine-variety-lbl">品种</span>
+      <div class="var-row"><koi-select id="mine-variety" aria-labelledby="mine-variety-lbl"></koi-select><button type="button" class="btn ghost" id="paint-open" aria-expanded="false" aria-controls="painter">自己画</button></div>
+    </div>
+    <div class="painter" id="painter" hidden>
+      <canvas id="paint-cv" aria-label="画布：在锦鲤身上涂抹，画出花纹"></canvas>
+      <div class="paint-row"><span class="lbl">颜色</span><div class="swatches" id="paint-cols"></div></div>
+      <div class="paint-row"><span class="lbl">底色</span><div class="swatches" id="paint-bases"></div></div>
+      <div class="paint-row"><span class="lbl">笔刷</span>
+        <div class="seg" id="paint-size"><button type="button" data-val="0.03">细</button><button type="button" data-val="0.055">中</button><button type="button" data-val="0.09">粗</button></div>
+      </div>
+      <div class="actions">
+        <button type="button" class="btn ghost" id="paint-undo">撤销</button>
+        <button type="button" class="btn ghost" id="paint-clear">清空</button>
+        <button type="button" class="btn" id="paint-done">画好了，去看看</button>
+      </div>
+      <p class="note" id="paint-count"></p>
+      <p class="note">在鱼身上涂抹就是花纹，涂到身体外面的会被裁掉。每画一笔，池子里的它就跟着换上，游起来花纹会随身体弯。</p>
+    </div>
+    <div class="row wide"><span class="lbl">标记</span>
+      <div class="seg" data-key="marker"><button type="button" data-val="hover">鼠标靠近时</button><button type="button" data-val="always">一直显示</button></div>
+    </div>
+    <div class="actions">
+      <button type="button" class="btn" id="mine-find">找找它</button>
+      <button type="button" class="btn" id="mine-call">唤它过来</button>
+      <button type="button" class="btn ghost" id="mine-reset">重新领养</button>
+    </div>
+    <p class="note">它吃到的鱼食、你开着壁纸的时间，都会让它慢慢长大。点一下它会冒出小爱心。</p>
+  </section>
+
+  <section class="pane" role="tabpanel" id="pane-book" data-pane="book" aria-labelledby="tab-book" hidden>
+    <p class="group-title">池中之最</p>
+    <div class="recs" id="bk-recs"></div>
+    <p class="status" id="bk-sum"></p>
+    <p class="group-title" data-en="Varieties">品种<span class="count" id="bk-vcount"></span></p>
+    <div class="vgrid" id="bk-vars"></div>
+    <p class="group-title">奇遇<span class="count" id="bk-mcount"></span></p>
+    <div class="mgrid" id="bk-moms"></div>
+    <p class="note">点一条纪录，池子里会把那条鱼圈出来。鼠标在一条鱼身上停一会儿，也能看到它的名字。稀有品种只会作为客人来访，见过以后就能给自己的锦鲤换上。</p>
+  </section>
+</aside>
+
+
+<script src="js/elya-bootstrap.js"></script>
+</body></html>
